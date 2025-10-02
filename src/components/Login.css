@@ -1,0 +1,23 @@
+.container{
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    background-color: #111;
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: #aaa 0 0 30px;
+}
+input{
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    width: 30vw;
+}
+button{
+    padding:0.8vw;
+    border-radius:10px;
+    margin-top: 2vh;
+    border: none;
+}

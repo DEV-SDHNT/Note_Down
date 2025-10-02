@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Single+Day&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Schoolbell&display=swap');
+html{
+    margin: 0;
+}
+*{
+    margin: 0;
+    font-family: "Schoolbell",cursive;
+}
+canvas{
+    touch-action: none;
+    background-color: #FFf;
+    border: none;
+}
+
+textarea{
+    font-family: 'Schoolbell','Single Day',cursive;
+    height: max-content;
+    white-space: nowrap;
+    resize: none;
+    overflow: hidden;
+    border: 1px solid black;
+}
+
+.toolid{
+    font-size: 15px;
+    text-transform: uppercase;
+    position: fixed;
+    left:50%;
+    top:1vh;
+    padding: 1vh;
+    border-radius: 10px;
+    translate:-50%;
+}
+.toolbar input{
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    appearance:none;
+    background: transparent;
+    height: 30px;
+    width: 30px;
+    border: none;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+.toolbar input::-webkit-color-swatch-wrapper{
+    padding:0;
+}
+.toolbar input::-webkit-color-swatch{
+    border:solid 1px;
+    border-radius: 50%;
+}
+.toolbar input::-moz-color-swatch{
+    border:solid 1px;
+    border-radius: 50%;
+}
+
+.text-dialog button{
+    border: none;
+    border-radius: 210px;
+    background-color: black;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+}
+.toolbar{
+    box-shadow: 0 0 5px #aaa;
+    width: fit-content;
+    border-radius:10px;
+    position: fixed;
+    bottom:1vh;
+    left:50%;
+    translate:-50%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+.toolbar button{
+    border: none;
+    border-radius: 10px;
+    background:transparent;
+    color:black;
+    padding: 1vh;
+    margin: 0;
+}
+.toolbar button:hover{
+    background: black;
+    color: white;
+}
+.toolbar button:focus{
+    background: black;
+    color: white;
+}
+.hist-tools{
+    box-shadow: 0 0 5px #aaa;
+    width: fit-content;
+    border-radius:10px;
+    position: fixed;
+    top:1vh;
+    right:1vw;
+}
+.hist-tools button{
+    background:transparent;
+    color:black;
+    border: none;
+    border-radius: 10px;
+    margin:0;
+    padding: 1vh;
+}
+.hist-tools button:hover{
+    background:black;
+    color:white;    
+}
+.hist-tools button:focus{
+    background:black;
+    color:white;    
+}
+
+.menu{
+    box-shadow: 0 0 5px #aaa;
+    width: fit-content;
+    border-radius:10px;
+    position: fixed;
+    top:1vh;
+    left:1vw;
+}
+.menu button{
+    border-radius: 10px;
+    border: none;
+    background:transparent;
+    color:black;
+    margin: 0;
+    padding: 1vh;
+}
+.menu button:hover{
+    background: black;
+    color:white;
+}
+.menu button:focus{
+    background: black;
+    color:white;
+}
