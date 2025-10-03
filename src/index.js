@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 
 if ('serviceWorker' in navigator) {
  window.addEventListener('load', () => {
-   navigator.serviceWorker.register('/serviceWorker.js')
+     navigator.serviceWorker.register(`${process.env.PUBLIC_URL}/serviceWorker.js`)
      .then(registration => {
          console.log("Service worker registered",registration.scope);
      })

@@ -5,7 +5,6 @@ import { useState, } from 'react';
 import { Editor, } from './components/Editor';
 import { Canvas, } from './components/Canvas';
 import { Home} from './components/Home';
-import { Test } from './components/Test';
 import { HomeIcon, LetterTextIcon, PenBox,  } from 'lucide-react';
 
 const App=()=> {
@@ -24,7 +23,6 @@ const App=()=> {
                 {page==='home' && <Home></Home>}
                 {page==='Editor' && <Editor></Editor>}
                 {page==='Canvas' && <Canvas></Canvas>}
-                {page==='test' && <Test></Test>}
             </div>
         </>
     );
