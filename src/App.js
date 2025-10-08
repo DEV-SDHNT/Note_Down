@@ -3,7 +3,7 @@ import { useState, } from 'react';
 import { Editor, } from './components/Editor';
 import { Canvas, } from './components/Canvas';
 import { Home } from './components/Home';
-import { Test } from './components/Test';
+import { Tester } from './components/Tester';
 import { HomeIcon, LetterTextIcon, PenBox,  } from 'lucide-react';
 
 const App=()=> {
@@ -21,7 +21,7 @@ const App=()=> {
                 {page==='Home' && <Home></Home>}
                 {page==='Editor' && <Editor></Editor>}
                 {page==='Canvas' && <Canvas></Canvas>}
-                {page==='Test' && <Test></Test>}
+                {page==='Test' && <Tester></Tester>}
         </div>
         </>
     );

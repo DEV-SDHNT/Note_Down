@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 
-export function App() {
+export function Tester() {
   const canvasRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
