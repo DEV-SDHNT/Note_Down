@@ -85,9 +85,9 @@ body{
     background: transparent;
 }
 
-.main .menu-bar button:hover,button:focus{
+.main .menu-bar button:hover{
     background: #000;
-    color: #0F0;
+    color: #aaa;
 }
 
 .main .workspace{
@@ -123,11 +123,12 @@ body{
     min-width: 40vw;
     max-width:50vw ;
     color: black;
-    overflow-y: scroll;
+    overflow:scroll;
     scrollbar-width:none;
     padding: 2vh;
     line-height: 1.3;
 }
+
 .main .workspace .preview h1{
     font-size:46px;
 }
@@ -205,7 +206,7 @@ body{
 }
 
 .modal .modal-container ul li:hover{
-    /* border-bottom: 1px solid #eee; */
+    border-bottom: 1px solid #eee;
     animation: hover 0.5s ease forwards;
 }
 @keyframes hover {
@@ -286,7 +287,7 @@ body{
         margin: 0;
         height: fit-content;
         text-wrap:wrap;
-        overflow: scroll;
+        overflow-x: scroll;
         scrollbar-width:5px;
         max-width: 98vw;
         border-radius: 10px;

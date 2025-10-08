@@ -1,5 +1,4 @@
 import "./Canvas.css";
-
 import React, { useState, useRef, useEffect } from "react";
 import { 
     LineSquiggle,
@@ -94,6 +93,10 @@ export function Canvas() {
     const [last,setLast]=useState({x:0,y:0});
     const [panningEnabled,setPanningEnabled]=useState(false);
     const [rects,setRects]=useState([]);
+    const [scale,setScale]=useState(1);
+    
+    
+    const pinch=useRef({dist:0,scale:1});
     const initialOffset=useRef({x:0,y:0});
     const dbRef=useRef(null);
     const textareaRef=useRef(null);
@@ -178,10 +181,11 @@ export function Canvas() {
 	      else if (e.nativeEvent) { 
             return { 
 		            x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, isTouch: false, };
-	      } 
+	      }
 	      return {x: 0, y: 0, isTouch: false };
     };
-
+    
+    
     const toWorld=(e)=>{
         const {x,y}=getEventCoords(e);
         return { x:x-offset.x, y:y-offset.y };    
@@ -190,7 +194,7 @@ export function Canvas() {
     const handleColorChange=(e)=>{
         setColor(e.target.value);
     }
-
+    
     const handleDoubleClick=(e)=>{
         const {x,y}=getEventCoords(e);
         const ctx = canvasRef.current.getContext("2d");
@@ -211,10 +215,10 @@ export function Canvas() {
             return;
         }
     }
-
     
     const handlePointerDown = (e) => { 
 	      const { x, y } = getEventCoords(e);
+        const pos=toWorld(e);
 
         const ctx = canvasRef.current.getContext("2d");	      
         if(tool===TOOL_PAN || e.button===1){
@@ -223,7 +227,7 @@ export function Canvas() {
             setLast({x,y});
             return;
         }
-        const pos=toWorld(e);
+
         
 	      if(tool===TOOL_SELECT){
             const hit = paths.find(p => p.tool!=="pointer" &&
@@ -304,7 +308,7 @@ export function Canvas() {
     const handlePointerMove = (e) => { 
 	      const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
-               
+        
 	      if(dragging && selectedIds.length>0){
             const dx=pos.x-dragging.x;
             const dy=pos.y-dragging.y;
@@ -354,8 +358,7 @@ export function Canvas() {
         if(panningEnabled){
             setPanningEnabled(false);
             return;
-        }
-        
+        }    
     };
     
     const undo = () => {
@@ -364,19 +367,22 @@ export function Canvas() {
             setRedoStack(prev => [paths, ...prev]);
             setPaths(last);
             setHistory(history.slice(0, -1));
-        } };
+        }
+    };
     
-        const redo = () => {
-            if (redoStack.length > 0) {
-	        const next = redoStack[0];
-	        setHistory(prev => [...prev, paths]);
-	        setPaths(next);
-	        setRedoStack(redoStack.slice(1));
-	    } };
-
+    const redo = () => {
+        if (redoStack.length > 0) {
+	          const next = redoStack[0];
+	          setHistory(prev => [...prev, paths]);
+	          setPaths(next);
+	          setRedoStack(redoStack.slice(1));
+	      }
+    };
+    
     function rand(j){
         return (Math.random()+0.8)*2*j;
     }
+
     
     useEffect(() => { 
         function sketchyRect(ctx,x,y,w,h,opts={}){
@@ -422,12 +428,15 @@ export function Canvas() {
         }
         
         function sketchyLine(ctx,x1,y1,x2,y2,opts={}){
-            const {strokes=4,jitter=3}=opts;
+            const {strokes=4,jitter=2}=opts;
+            ctx.globalAlpha=1;
             for(let i=0; i < strokes; i++){
                 ctx.beginPath();
                 ctx.moveTo(x1+rand(jitter),y1+rand(jitter));
                 ctx.lineTo(x2+rand(jitter),y2+rand(jitter));
+                ctx.closePath();
                 ctx.stroke();
+                ctx.fill();
             }
         }
     
@@ -444,8 +453,7 @@ export function Canvas() {
                 //ctx.quadraticCurveTo(controlx,controly,x2,y2);
                 ctx.stroke();
                 ctx.closePath();
-                
-                
+                               
                 const hx=x2+rand(jitter);
                 const hy=y2+rand(jitter);
                 ctx.beginPath();
@@ -462,7 +470,9 @@ export function Canvas() {
 	      const canvas = canvasRef.current;
 	      const ctx = canvas.getContext('2d');
 	      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         ctx.save();
+                
         ctx.translate(offset.x,offset.y);
 //        ctx.strokeStyle=color;
 	      const drawPath = (path) => {
@@ -482,6 +492,7 @@ export function Canvas() {
 	          case TOOL_LINE:
                 ctx.strokeStyle=color;
                 ctx.lineWidth=2;
+                ctx.fillStyle=color+"05";
                 sketchyLine(ctx,start.x,start.y,end.x,end.y);
                 //ctx.moveTo(start.x, start.y);
                 //ctx.lineTo(end.x, end.y);
@@ -489,14 +500,14 @@ export function Canvas() {
                 break;
 	          case TOOL_RECT:
                 ctx.strokeStyle=color;
-                ctx.fillStyle=color+"01";
+                ctx.fillStyle=color+"02";
                 ctx.lineWidth=1;
                 sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y,{strokes:8,jitter:3});
                 //ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
                 break;
 	          case TOOL_CIRCLE:
                 ctx.strokeStyle=color;
-                ctx.fillStyle=color+"01";
+                ctx.fillStyle=color+"03";
                 ctx.lineWidth=2;
 		            //const radius = Math.hypot(end.x - start.x, end.y - start.y);
                 sketchyCircle(ctx,start.x,start.y,end.x,end.y);
@@ -525,7 +536,7 @@ export function Canvas() {
 	      };
 	      paths.forEach(drawPath);
         ctx.restore();
-    }, [paths,offset]);
+    }, [paths,offset,scale]);
     
     // const drawArrow = (ctx, start, end) => { 
 	  //     const headlen = 20;
@@ -599,6 +610,7 @@ export function Canvas() {
                 value={editingTextValue}
                 onChange={(e)=>setEditingTextValue(e.target.value)}
                 onMouseLeave={applyTextEdit}
+                onTouchEnd={applyTextEdit}
                 onKeyDown={(e)=>{if(e.key==="Escape") applyTextEdit();}}
                 autoFocus
             />

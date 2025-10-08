@@ -31,12 +31,14 @@ textarea{
     padding: 1vh;
     border-radius: 10px;
     translate:-50%;
+    backdrop-filter:blur(4px);
 }
 .toolbar input{
     -webkit-appearance:none;
     -moz-appearance:none;
     appearance:none;
     background: transparent;
+    backdrop-filter:blur(4px);
     height: 30px;
     width: 30px;
     border: none;
@@ -68,6 +70,7 @@ textarea{
     box-shadow: 0 0 5px #aaa;
     width: fit-content;
     border-radius:10px;
+    backdrop-filter:blur(3px);
     position: fixed;
     bottom:1vh;
     left:50%;
@@ -80,6 +83,7 @@ textarea{
     border: none;
     border-radius: 10px;
     background:transparent;
+    backdrop-filter:blur(3px);
     color:black;
     padding: 1vh;
     margin: 0;
@@ -98,10 +102,12 @@ textarea{
     border-radius:10px;
     position: fixed;
     top:1vh;
+    backdrop-filter:blur(4px);
     right:1vw;
 }
 .hist-tools button{
     background:transparent;
+    backdrop-filter:blur(4px);
     color:black;
     border: none;
     border-radius: 10px;
@@ -122,6 +128,7 @@ textarea{
     width: fit-content;
     border-radius:10px;
     position: fixed;
+    backdrop-filter:blur(4px);
     top:1vh;
     left:1vw;
 }
@@ -129,6 +136,7 @@ textarea{
     border-radius: 10px;
     border: none;
     background:transparent;
+    backdrop-filter:blur(4px);
     color:black;
     margin: 0;
     padding: 1vh;

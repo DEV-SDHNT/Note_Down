@@ -1,0 +1,19 @@
+import "./Mermaid.css";
+import { useState, useRef, useEffect } from "react";
+
+export function Mermaid(){
+    const [code,setCode]=setState("");
+    const ref=useRef(null);
+
+    useEffect(()=>{
+        if(!window.mermaid){
+            const script=document.createElement("script");
+            script.src=""
+        }
+    });
+
+    
+    return (
+        
+    );
+}
