@@ -4,7 +4,7 @@ import { Editor, } from './components/Editor';
 import { Canvas, } from './components/Canvas';
 import { Home } from './components/Home';
 import { Tester } from './components/Tester';
-import { HomeIcon, LetterTextIcon, PenBox,  } from 'lucide-react';
+import { HomeIcon, AlignLeft, Brush,  } from 'lucide-react';
 
 const App=()=> {
     const [page,setPage]=useState('Home');    
@@ -14,8 +14,8 @@ const App=()=> {
                 <span className='dynamic-navbar'>
                 <div className='nav-bar'>
                     <button onClick={()=>setPage('Home')}><HomeIcon size={28}></HomeIcon></button>
-                    <button onClick={()=>setPage('Editor')}><LetterTextIcon size={28}></LetterTextIcon></button>        
-                    <button onClick={()=>setPage('Canvas')}><PenBox size={28}></PenBox></button>                    
+                    <button onClick={()=>setPage('Editor')}><AlignLeft size={28}></AlignLeft></button>        
+                    <button onClick={()=>setPage('Canvas')}><Brush size={28}></Brush></button>                    
                 </div>
                 </span>
              </>

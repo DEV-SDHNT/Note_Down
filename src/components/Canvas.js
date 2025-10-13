@@ -3,11 +3,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { 
     LineSquiggle,
     MousePointer2,
-    PenLineIcon,
+    PencilLineIcon,
     SquareIcon,
     Circle,
     ArrowUpLeft,
-    LetterText,
+    Baseline,
     LucideSquareDashedMousePointer,
     // CheckIcon,
     Undo2,
@@ -581,11 +581,11 @@ export function Canvas() {
             <input type="color" value={color} onChange={handleColorChange}/>
             <button onClick={() => setTool(TOOL_POINTER)}><MousePointer2></MousePointer2></button>
             <button onClick={() => setTool(TOOL_PEN)}><LineSquiggle></LineSquiggle></button>
-            <button onClick={() => setTool(TOOL_LINE)}><PenLineIcon></PenLineIcon></button>
+            <button onClick={() => setTool(TOOL_LINE)}><PencilLineIcon></PencilLineIcon></button>
             <button onClick={() => setTool(TOOL_RECT)}><SquareIcon></SquareIcon></button>
             <button onClick={() => setTool(TOOL_CIRCLE)}><Circle></Circle></button>
             <button onClick={() => setTool(TOOL_ARROW)}><ArrowUpLeft></ArrowUpLeft></button>
-            <button onClick={() => setTool(TOOL_TEXT)}><LetterText></LetterText></button>
+            <button onClick={() => setTool(TOOL_TEXT)}><Baseline></Baseline></button>
             <button onClick={() => setTool(TOOL_SELECT)}><LucideSquareDashedMousePointer></LucideSquareDashedMousePointer></button>
             <button onClick={() => setTool(TOOL_PAN)}><Move></Move></button>
         </div>
