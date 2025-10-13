@@ -10,19 +10,22 @@ const App=()=> {
     const [page,setPage]=useState('Home');    
     return (
         <>
-            {
+            {<>
+                <span className='dynamic-navbar'>
                 <div className='nav-bar'>
                     <button onClick={()=>setPage('Home')}><HomeIcon size={28}></HomeIcon></button>
                     <button onClick={()=>setPage('Editor')}><LetterTextIcon size={28}></LetterTextIcon></button>        
                     <button onClick={()=>setPage('Canvas')}><PenBox size={28}></PenBox></button>                    
-                </div> 
+                </div>
+                </span>
+             </>
             }
             <div className="app">
                 {page==='Home' && <Home></Home>}
                 {page==='Editor' && <Editor></Editor>}
                 {page==='Canvas' && <Canvas></Canvas>}
                 {page==='Test' && <Tester></Tester>}
-        </div>
+            </div>
         </>
     );
 }

@@ -11,13 +11,14 @@ body{
   background-color: #000;
   left: 5px;
   top:50%;
-  translate:0 -50%;
+  translate:-100% -50%;
   display: flex;
+  content:none;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
   width: 10px;
-  height: 40px;
+  height: 50px;
   border: none; 
   border-radius: 20vh;
   box-shadow: #444 0 0 5px;
@@ -27,9 +28,28 @@ body{
     margin: 0;
     display: none;
     border: none;
+    width:0;
+    height:0;
     background-color: transparent;
     color: #fff;
     border-radius: 20vh;
+}
+.dynamic-navbar{
+    background: #0000;
+    border-radius: 20vh;
+    height:50px;
+    width:5px;
+    padding: 20px;
+    position: fixed;
+    top:50%;
+    translate:0% -50%;
+    z-index: 10;
+}
+.dynamic-navbar:hover .nav-bar{
+    animation:open 0.3s forwards ease-out;
+}
+.dynamic-navbar:focus .nav-bar{
+    animation:open 0.3s forwards ease-out;
 }
 .nav-bar:hover{
     animation:open 0.3s forwards ease-out;
@@ -55,15 +75,29 @@ body{
         height: 100px;
     }
     100%{
+        translate:5px -50%;
         width:40px;
         height:134px;
+        content: none;
     }
 }
-.nav-bar:hover button{
-    display: flex;
+.dynamic-navbar:focus,.dynamic-navbar:hover button{
+    display:flex;
+    animation:focus-color 0.4s forwards ease-in-out;
+}
+@keyframes focus-color{
+    0%{
+        width: 0px;
+        height:0px;
+        color:transparent;
+    }
+    100%{
+        width:fit-content;
+        height:fit-content;
+    }
 }
 
-.nav-bar button:hover,button:focus {
+.dynamic-navbar .nav-bar button:hover,button:focus {
   color: #000;
   background-color: white;
 }
