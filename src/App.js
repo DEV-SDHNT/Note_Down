@@ -7,7 +7,7 @@ import { Tester } from './components/Tester';
 import { HomeIcon, AlignLeft, Brush,  } from 'lucide-react';
 
 const App=()=> {
-    const [page,setPage]=useState('Home');    
+    const [page,setPage]=useState('Editor');    
     return (
         <>
             {<>

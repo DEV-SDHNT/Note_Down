@@ -23,13 +23,13 @@ textarea{
 }
 
 .toolid{
-    font-size: 15px;
+    font-size: 17px;
     text-transform: uppercase;
     position: fixed;
     left:50%;
     top:1vh;
-    padding: 1vh;
-    border-radius: 10px;
+    padding: 1.2vh;
+    border-radius: 30px;
     translate:-50%;
     backdrop-filter:blur(4px);
 }
@@ -69,24 +69,30 @@ textarea{
 .toolbar{
     box-shadow: 0 0 5px #aaa;
     width: fit-content;
-    border-radius:10px;
+    border-radius:30px;
     backdrop-filter:blur(3px);
     position: fixed;
     bottom:1vh;
     left:50%;
     translate:-50%;
     display: flex;
+    padding:2px;
     justify-content: space-around;
     align-items: center;
 }
 .toolbar button{
     border: none;
-    border-radius: 10px;
+    border-radius: 30px;
     background:transparent;
     backdrop-filter:blur(3px);
     color:black;
-    padding: 1vh;
-    margin: 0;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding:0px;
+    margin:0 0 0 0;
 }
 .toolbar button:hover{
     background: black;
@@ -99,20 +105,28 @@ textarea{
 .hist-tools{
     box-shadow: 0 0 5px #aaa;
     width: fit-content;
-    border-radius:10px;
+    border-radius:30px;
     position: fixed;
     top:1vh;
     backdrop-filter:blur(4px);
     right:1vw;
+    display: flex;
+    flex-direction: column-reverse;
+    padding:2px;
 }
 .hist-tools button{
     background:transparent;
     backdrop-filter:blur(4px);
     color:black;
     border: none;
-    border-radius: 10px;
+    border-radius: 30px;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin:0;
-    padding: 1vh;
+    padding: 0px;
 }
 .hist-tools button:hover{
     background:black;
@@ -126,20 +140,26 @@ textarea{
 .menu{
     box-shadow: 0 0 5px #aaa;
     width: fit-content;
-    border-radius:10px;
+    border-radius:30px;
     position: fixed;
     backdrop-filter:blur(4px);
     top:1vh;
     left:1vw;
+    padding:2px;
 }
 .menu button{
-    border-radius: 10px;
+    border-radius: 30px;
     border: none;
     background:transparent;
     backdrop-filter:blur(4px);
     color:black;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin: 0;
-    padding: 1vh;
+    padding: 8px;
 }
 .menu button:hover{
     background: black;

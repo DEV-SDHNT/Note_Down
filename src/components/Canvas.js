@@ -18,11 +18,12 @@ import {
     Trash2,
     Delete,
     Move,
+    Eraser
 } from "lucide-react";
 import {openDB} from 'idb';
 
 
-const TOOL_POINTER="pointer";
+const TOOL_POINTER = "pointer";
 const TOOL_PEN = "pen";
 const TOOL_LINE = "line";
 const TOOL_RECT = "rect";
@@ -30,8 +31,8 @@ const TOOL_CIRCLE = "circle";
 const TOOL_TEXT = "text";
 const TOOL_ARROW = "arrow";
 const TOOL_SELECT = "select";
-const TOOL_PAN="pan";
-
+const TOOL_PAN = "pan";
+const TOOL_ERASER="eraser";
 
 const DB_NAME="notesDB";
 const STORE_NAME="canvas";
@@ -100,7 +101,9 @@ export function Canvas() {
     const initialOffset=useRef({x:0,y:0});
     const dbRef=useRef(null);
     const textareaRef=useRef(null);
-        
+
+    const eraser=20;
+    
     async function loadFileList() {
         const tx=dbRef.current.transaction('canvas',"readonly");
         const store=tx.objectStore('canvas');
@@ -194,6 +197,7 @@ export function Canvas() {
     const handleColorChange=(e)=>{
         setColor(e.target.value);
     }
+
     
     const handleDoubleClick=(e)=>{
         const {x,y}=getEventCoords(e);
@@ -308,7 +312,7 @@ export function Canvas() {
     const handlePointerMove = (e) => { 
 	      const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
-        
+
 	      if(dragging && selectedIds.length>0){
             const dx=pos.x-dragging.x;
             const dy=pos.y-dragging.y;
@@ -590,7 +594,7 @@ export function Canvas() {
             <button onClick={() => setTool(TOOL_PAN)}><Move></Move></button>
         </div>
 
-        <div className="toolid" style={{background:"transparent",boxShadow:`0 0 5px ${color}`,color:color}}>
+        <div className="toolid" style={{background:"transparent",boxShadow:`0 0 4px ${color}`,color:color}}>
             {tool}
         </div>
         

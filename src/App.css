@@ -19,6 +19,7 @@ body{
   align-items: center;
   width: 10px;
   height: 50px;
+  padding: 0.2vw;
   border: none; 
   border-radius: 20vh;
   box-shadow: #444 0 0 5px;
@@ -46,10 +47,10 @@ body{
     z-index: 10;
 }
 .dynamic-navbar:hover .nav-bar{
-    animation:open 0.3s forwards ease-out;
+    animation:open 0.2s forwards ease-out;
 }
 .dynamic-navbar:focus .nav-bar{
-    animation:open 0.3s forwards ease-out;
+    animation:open 0.2s forwards ease-out;
 }
 .nav-bar:hover{
     animation:open 0.3s forwards ease-out;
@@ -60,10 +61,11 @@ body{
 @keyframes open{
     0%{
         width:10px;
-        height: 40px;
+        height: 40px; 
     }
     25%{
         width:20px;
+        translate:5px -50%;
         height: 60px;
     }
     50%{
@@ -83,7 +85,7 @@ body{
 }
 .dynamic-navbar:focus,.dynamic-navbar:hover button{
     display:flex;
-    animation:focus-color 0.4s forwards ease-in-out;
+    animation:focus-color 0.5s forwards ease-in-out;
 }
 @keyframes focus-color{
     0%{

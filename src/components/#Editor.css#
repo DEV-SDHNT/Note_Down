@@ -144,7 +144,7 @@ body{
     font-size:18px;
 }
 .main .workspace .preview li{
-    font-size:18px;
+    font-size:18px#;
 }
 .main .workspace .preview a{
     color:#333;
