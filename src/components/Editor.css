@@ -256,6 +256,8 @@ body{
     border: none;
     font-size: 16px;
 }
+
+
 @media (max-width:786px) and (max-height:1080px) {
     .main{
         display: flex;
@@ -266,9 +268,13 @@ body{
         flex-direction: column;
         width: 100vw;
         height: 100vh;
+        overflow-y: scroll;
+        scrollbar-width:none;
     }
     .main .workspace .editor{
         width: 99vw;
+        min-height: 50vh;
+        max-height:50vh;
         text-wrap:wrap;
         overflow-y: scroll;
         scrollbar-width:none;
@@ -288,7 +294,7 @@ body{
         height:fit-content;
         width: 99vw;
         text-wrap:wrap;
-        overflow-x: scroll;
+        overflow: scroll;
         scrollbar-width:none;
         border-radius: 10px;
     }
