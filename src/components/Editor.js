@@ -2,9 +2,9 @@ import "./Editor.css";
 import React, { useState, useEffect, useRef } from 'react';
 import { Remarkable } from 'remarkable';
 import {openDB} from 'idb';
-import { Trash,Plus,Save,Trash2,FolderOpen } from "lucide-react";
+import { Trash,Plus,Save,Trash2,FolderOpen,Maximize2,Minimize2 } from "lucide-react";
 
-const md = new Remarkable();
+const md = new Remarkable({breaks:true});
 
 const DB_NAME="notesDB";
 const STORE_NAME="files";
@@ -42,6 +42,8 @@ export function Editor() {
     
     const [filename,setFilename]=useState("untitled.md");
     const [fileList,setFileList]=useState([]);
+    const [fullScreen,setFullScreen]=useState(false);
+    
     const textareaRef=useRef(null);
     const dbRef=useRef(null);
     
@@ -62,6 +64,9 @@ export function Editor() {
     useEffect(()=>{
         setPreview(md.render(markdown));
     },[markdown]);
+    useEffect(()=>{
+        console.log(fullScreen);
+    })
     
     async function handleNewFile(name){
         if (markdown!=="") {
@@ -117,29 +122,53 @@ export function Editor() {
     
     return (
         <div className="main">
-            <div className="menu-bar">
-                <div className="file">
-                    <p className="file-name">{filename}</p>
-                </div>
-                <div className="menu-buttons">
-                    <button onClick={()=>handleNewFile(filename)}><Plus size={21}/></button>{" "}
-                    <button onClick={()=>setShowModal(true)}><FolderOpen size={21}/></button>{" "}
-                    <button onClick={()=>setSaveModal(true)}><Save size={21}/></button>{" "}
-                    <button onClick={()=>{setShowModal(true)}}><Trash2 size={21}/></button>{" "}
+            <div className="dynamicbar">
+                <div className="menu-bar">
+                    <div className="file">
+                        <p className="file-name">{filename}</p>
+                    </div>
+                    <div className="menu-buttons">
+                        <button onClick={()=>handleNewFile(filename)}><Plus size={21}/></button>
+                        <button onClick={()=>setShowModal(true)}><FolderOpen size={21}/></button>
+                        <button onClick={()=>setSaveModal(true)}><Save size={21}/></button>
+                        <button onClick={()=>{setShowModal(true)}}><Trash2 size={21}/></button>
+                    </div>
                 </div>
             </div>
+                
             <div className="workspace">
-                <textarea
+                  <textarea
                     ref={textareaRef}
                     className="editor"
                     default=" "
                     value={markdown}
                     onChange={(e)=>setMarkdown(e.target.value)}
                 ></textarea>
+
                 <div
                     className="preview"
-                    dangerouslySetInnerHTML={{__html:preview}}
-                ></div>
+                    style={{
+                        position:fullScreen?'fixed':'relative',
+                        height:fullScreen?'98vh':'fit-content',
+                        width:fullScreen?'96vw':'96vw'
+                        
+                    }}
+                    dangerouslySetInnerHTML={{__html:preview}}>
+                </div>
+                <div className="mode">
+                    {fullScreen===true &&
+                     <button
+                         onClick={()=>{setFullScreen(false)}}
+                     >
+                        <Minimize2/>
+                    </button>}
+                    {fullScreen===false &&
+                     <button
+                         onClick={()=>setFullScreen(true)}
+                     >
+                        <Maximize2/>
+                     </button>}
+                </div>
             </div>
             { showModal && (
                 <div className="modal">
@@ -172,29 +201,3 @@ export function Editor() {
         </div>
     );
 };
-            // const handleOpenFile=async ()=> {
-            //     const name=prompt(`Open file:\n Available files:\n ${fileList.join("\n")}`);
-            //     if (name && fileList.includes(name)){
-            //         await openFile(name);
-            //     }else if(name){
-            //         alert("File not Found");
-            //     }
-            // };
-        
-            // const handleSaveFile=async ()=>{
-            //     setFilename(prompt("Filename:",filename));
-            //     setFilename()
-            //     await saveFile(filename,markdown);
-            //     alert(`Saved ${filename} to IndexedDB`);
-            //     console.log("Saved");
-            // };
-        
-            // const handleSaveAsFile=async ()=>{
-            //     const newName=prompt("Save As",filename);
-            //     if(newName){
-            //         setFilename(newName);
-            //         await saveFile(newName,markdown);
-            //         alert(`Saved As: ${newName}`);
-            //     }
-            // };
-        

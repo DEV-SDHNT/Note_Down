@@ -27,8 +27,11 @@ textarea{
     text-transform: uppercase;
     position: fixed;
     left:50%;
-    top:1vh;
-    padding: 1.2vh;
+    top:0.8vh;
+    min-width: 10vw;
+    text-align: center;
+    padding-block: 0.4vh;
+    padding-inline:1vw;
     border-radius: 30px;
     translate:-50%;
     backdrop-filter:blur(4px);

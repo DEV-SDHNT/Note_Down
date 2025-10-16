@@ -389,11 +389,7 @@ body{
         overflow-y: scroll;
         scrollbar-width:none;
     }
-    .toolid{
-        padding-inline:1vw;
-        padding-block:1vh;
-        background: red;
-    }
+
     .main .workspace .editor{
         width: 96vw;
         min-height: 30vh;
