@@ -137,10 +137,11 @@ export function Editor() {
             </div>
                 
             <div className="workspace">
-                  <textarea
+                <textarea
                     ref={textareaRef}
                     className="editor"
                     default=" "
+                    placeholder="Write notes here..."
                     value={markdown}
                     onChange={(e)=>setMarkdown(e.target.value)}
                 ></textarea>
@@ -158,12 +159,14 @@ export function Editor() {
                 <div className="mode">
                     {fullScreen===true &&
                      <button
+                         name="FullScreen "
                          onClick={()=>{setFullScreen(false)}}
                      >
                         <Minimize2/>
                     </button>}
                     {fullScreen===false &&
                      <button
+                         name='Normal'
                          onClick={()=>setFullScreen(true)}
                      >
                         <Maximize2/>

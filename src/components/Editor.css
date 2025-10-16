@@ -46,10 +46,10 @@ body{
     z-index: 4;
 }
 .main .dynamicbar:hover .menu-bar{
-    animation: open-navbar 0.5s forwards ease-out;
+    animation: open-navbar 0.3s forwards ease-out;
 }
 .main .dynamicbar:focus .menu-bar{
-    animation: open-navbar 0.5s forwards ease-out;
+    animation: open-navbar 0.3s forwards ease-out;
 }
 @keyframes open-navbar{
     0%{
@@ -120,7 +120,7 @@ body{
 }
 
 .main .menu-bar .menu-buttons{
-    background: transparent;
+    background: white;
     backdrop-filter:blur(4px);
     width: fit-content;
     display: none;
@@ -263,7 +263,7 @@ body{
     border: none;
     border-radius: 40px;
     padding:1vh;
-    box-shadow: #999 0 0 6px;
+    box-shadow: #99A 0 0 6px;
 }
 .mode button:hover{
     background: black;
