@@ -1,12 +1,19 @@
 const express=require('express');
 const http=require('http');
 const WebSocket=require('ws');
+const socketIo=require('socket.io');
+const cors=require('cors');
 
 const app=express();
+app.use(cors({origin:"https://dev-sdhnt.github.io/Note_Down"}));
 const server=http.createServer(app);
-
-const wss=new WebSocket.Server({server});
-
+//const wss=new WebSocket.Server({server});
+const wss=socketIo(server,{
+    cors:{
+        origin:"https://dev-sdhnt.github.io/Note_Down",
+        methods:['GET','POST'],
+    },
+});
 const users=new Map();
 
 wss.on('connection',(ws,req)=>{
