@@ -49,5 +49,5 @@ wss.on('connection',(ws,req)=>{
 app.get('/',(req,res)=>{
     res.send('Websocket Server Running');
 });
-const PORT=8080;
+const PORT=5000;
 server.listen(PORT,"0.0.0.0",()=>console.log(`Server Started at: ${PORT}`));
