@@ -50,4 +50,4 @@ app.get('/',(req,res)=>{
     res.send('Websocket Server Running');
 });
 const PORT=8080;
-server.listen(PORT,()=>console.log(`Server Started at: ${PORT}`));
+server.listen(PORT,"0.0.0.0",()=>console.log(`Server Started at: ${PORT}`));
