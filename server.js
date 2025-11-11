@@ -5,47 +5,48 @@ const socketIo=require('socket.io');
 const cors=require('cors');
 
 const app=express();
-app.use(cors({origin:"https://dev-sdhnt.github.io/Note_Down"}));
+//app.use(cors({origin:"https://dev-sdhnt.github.io/Note_Down"}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
 const wss=socketIo(server,{
     cors:{
         origin:"https://dev-sdhnt.github.io/Note_Down",
+        //origin:"http://localhost:3020",
         methods:['GET','POST'],
     },
 });
 const users=new Map();
 
-wss.on('connection',(ws,req)=>{
+wss.on('connection',(ws)=>{
     console.log('New Connection');
 
     ws.on('message',(data)=>{
         try{
             const msg=JSON.parse(data);
             const {type,userId,targetId,payload}=msg;
-
-            if(type==='register'){
-               
+            console.log('Type: ',msg.type,'| target id: ',msg.targetId,'| Payload: ',payload);
+            if(type==='register'){               
                 users.set(userId,ws);
                 ws.userId=userId;
                 console.log(`User Registered : ${userId}`);
             }
             if(type==='send' && targetId && payload){
                 const targetSocket=users.get(targetId);
-                if(targetSocket && targetSocket.readyState===WebSocket.OPEN){
-                    targetSocket.send(JSON.stringify({
+                if(targetSocket){
+                    console.log('Payload send to ',targetId);
+                    targetSocket.emit('message',JSON.stringify({
                         from:userId,
                         payload,
                     }));
                 }else{
-                    ws.send(JSON.stringify({error:"User Not Found | Invalid Targed ID "}));
+                    ws.on('message',JSON.stringify({error:"User Not Found | Invalid Targed ID "}));
                 }
             }
         } catch(err){
             console.log('Error:',err);
         }
     });
-    ws.on('close',()=>{
+    ws.on('disconnect',()=>{
         if(ws.userId){
             users.delete(ws.userId);
             console.log(`User Disconnected: ${ws.userId}`);
