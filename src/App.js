@@ -8,7 +8,7 @@ import { Home } from './components/Home';
 import { HomeIcon , FileText, Brush} from 'lucide-react';
 
 const App=()=> {
-    const [page,setPage]=useState('Canvas');
+    const [page,setPage]=useState('Home');
     useEffect(()=>{
         const handleWheel=(e)=>{
             if(e.ctrlKey) e.preventDefault();

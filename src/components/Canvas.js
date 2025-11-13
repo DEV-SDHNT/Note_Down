@@ -160,7 +160,7 @@ export function Canvas() {
         if(file) {
             setDrawingName(file.filename);
             setPaths(file.paths);
-            console.log("Opened : ",name,", Paths: ",file.paths);
+            //console.log("Opened : ",name,", Paths: ",file.paths);
 
             setShowModal(false);
             if (canvasRef.current) {
@@ -178,7 +178,7 @@ export function Canvas() {
         const store=tx.objectStore('canvas');
    
         await store.put({filename:name,paths});
-        console.log("Saved",name,", Paths: ",paths);
+        //console.log("Saved",name,", Paths: ",paths);
         await tx.done;
         await loadFileList();
         alert(`File ${drawingName} Saved`);
@@ -723,7 +723,7 @@ export function Canvas() {
         setEditingTextId(null);
         setEditingTextValue('');
     }
-    const backendAPI='https://note-down-backend.onrender.com';
+    const backendAPI='wss://note-down-backend.onrender.com';
     //const backendAPI='http://localhost:5000';
     useEffect(()=>{
         //ws.current=new WebSocket('https://note-down-backend.onrender.com');
@@ -736,7 +736,7 @@ export function Canvas() {
         //     if(data.payload) {setReceivedPaths(data.payload);setConnection(true);}
         //     if(data.error) {alert(data.error);setConnection(false);}
         // };
-        console.log("Socket : ",newSocket);
+        //console.log("Socket : ",newSocket);
         newSocket.on('message',(msg)=>{
             const data=JSON.parse(msg);
 
