@@ -1,4 +1,5 @@
 import "./Canvas.css";
+import io from 'socket.io-client';
 import React, { useState, useRef, useEffect } from "react";
 import { 
     LineSquiggle,
@@ -9,7 +10,6 @@ import {
     ArrowUpLeft,
     Baseline,
     LucideSquareDashedMousePointer,
-    // CheckIcon,
     Undo2,
     Redo2,
     Plus,
@@ -18,7 +18,13 @@ import {
     Trash2,
     Delete,
     Move,
-    Eraser
+    Eraser,
+    Sun,
+    Moon,
+    Grid2x2,
+    Undo,
+    Cable,
+    Merge
 } from "lucide-react";
 import {openDB} from 'idb';
 
@@ -32,10 +38,13 @@ const TOOL_TEXT = "text";
 const TOOL_ARROW = "arrow";
 const TOOL_SELECT = "select";
 const TOOL_PAN = "pan";
-const TOOL_ERASER="eraser";
+const TOOL_ERASER = "eraser";
+const TOOL_SPLINEARROW="spline";
+const TOOL_LINK='link';
 
-const DB_NAME="notesDB";
-const STORE_NAME="canvas";
+
+const DB_NAME = "notesDB";
+const STORE_NAME = "canvas";
 
 export function initDB() {
     const db=openDB(DB_NAME,1,{
@@ -68,17 +77,18 @@ export function Canvas() {
     const [drawingName, setDrawingName]=useState('untitled');
     const [tool, setTool] = useState(TOOL_POINTER); 
     const [isDrawing, setIsDrawing] = useState(false);
-    
+    const [grid,setGrid]=useState(true);
     const [paths, setPaths] = useState([])
     const [selectedIds, setSelectedIds] = useState(null)
 
     const [currentPath, setCurrentPath] = useState(null);
 
+    const [links,setLinks]=useState([]);
+    
     const [editingTextId, setEditingTextId] = useState(null);
     const [editingTextValue, setEditingTextValue] = useState([]);
     const [textPosition,setTextPosition]=useState({x:0,y:0});
-
-    const [color,setColor]=useState("#222222");
+    const [longestWordSize,setLongestWordSize]=useState(0);
     
     const [history, setHistory] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
@@ -94,15 +104,27 @@ export function Canvas() {
     const [last,setLast]=useState({x:0,y:0});
     const [panningEnabled,setPanningEnabled]=useState(false);
     const [rects,setRects]=useState([]);
+
     const [scale,setScale]=useState(1);
-    
-    
+    const [darkMode,setDarkMode]=useState(false);
+    const [color,setColor]=useState("#444444");
+    const [hovered,setHovered]=useState(false);
+    const [linkMode,setLinkMode]=useState(false);
     const pinch=useRef({dist:0,scale:1});
     const initialOffset=useRef({x:0,y:0});
     const dbRef=useRef(null);
     const textareaRef=useRef(null);
 
-    const eraser=20;
+    const [collab,setCollab]=useState(false);
+    const [socket,setSocket]=useState(null);
+    const [connection,setConnection]=useState(false);
+    const [userId,setUserId]=useState('');
+    const [targetId,setTargetId]=useState('');
+    const [receivedPaths,setReceivedPaths]=useState([]);
+    
+
+    const ws=useRef(null);
+
     
     async function loadFileList() {
         const tx=dbRef.current.transaction('canvas',"readonly");
@@ -154,7 +176,7 @@ export function Canvas() {
         }
         const tx=dbRef.current.transaction('canvas',"readwrite");
         const store=tx.objectStore('canvas');
-        //console.log("inSavefunc");
+   
         await store.put({filename:name,paths});
         console.log("Saved",name,", Paths: ",paths);
         await tx.done;
@@ -199,30 +221,16 @@ export function Canvas() {
     }
 
     
-    const handleDoubleClick=(e)=>{
-        const {x,y}=getEventCoords(e);
-        const ctx = canvasRef.current.getContext("2d");
-        console.log("Double Clicked");
-        const pos=toWorld(e);
-        const hit=paths.find(p=>
-            p.tool==="text" &&
-                pos.x >= Math.min(p.start.x,p.end.x)-20 &&
-                pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
-                pos.y >= Math.min(p.start.y,p.end.y)-10 &&
-                pos.y <= Math.max(p.start.y,p.end.y)+30 
-            );
-        if(hit){
-            //console.log([hit.id,hit.start.x,hit.start.y,hit.text]);
-            setEditingTextId(hit.id);
-            setEditingTextValue(hit.text);
-            setTextPosition({x:hit.start.x,y:hit.start.y});
-            return;
-        }
-    }
     
     const handlePointerDown = (e) => { 
 	      const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
+//----------------Start-----------------------------------------------------
+        if(tool===TOOL_LINK) {
+            
+        }
+
+    //---------------End-------------------------------------------------------        
 
         const ctx = canvasRef.current.getContext("2d");	      
         if(tool===TOOL_PAN || e.button===1){
@@ -234,6 +242,7 @@ export function Canvas() {
 
         
 	      if(tool===TOOL_SELECT){
+            const ctx = canvasRef.current.getContext("2d");
             const hit = paths.find(p => p.tool!=="pointer" &&
                                    p.start && p.end &&
 		                               pos.x >= Math.min(p.start.x, p.end.x) -10 &&
@@ -241,8 +250,7 @@ export function Canvas() {
 		                               pos.y >= Math.min(p.start.y, p.end.y) -10 &&
 		                               pos.y <= Math.max(p.start.y, p.end.y) +10
                                   );
-            if (hit) {
-                //console.log("Shape hit:: ",hit);
+            if (hit) {                
                 setSelectedIds([hit.id]);
                 setDragging({x:pos.x,y:pos.y});
                 return;
@@ -250,6 +258,34 @@ export function Canvas() {
             else{
                 console.log("Shaped undefined/Not Found");
             }
+        }
+
+	      if(tool===TOOL_ERASER){
+            const hit = paths.find(p => p.tool!=="pointer" &&
+                                   p.start && p.end &&
+		                               pos.x >= Math.min(p.start.x, p.end.x) -10 &&
+		                               pos.x <= Math.max(p.start.x, p.end.x) -10 &&
+		                               pos.y >= Math.min(p.start.y, p.end.y) -10 &&
+		                               pos.y <= Math.max(p.start.y, p.end.y) +10
+                                  );
+            // const hitTxt=paths.find(p=>p.tool==="text" &&
+            //                         pos.x >= Math.min(p.start.x,p.end.x)-10 &&
+            //                         pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
+            //                         pos.y >= Math.min(p.start.y,p.end.y)-20 &&
+            //                         pos.y <= Math.max(p.start.y,p.end.y)+30 
+            //                        );
+            if (hit) {
+                //console.log("Shape hit:: ",hit);
+                setPaths(prev=>prev.filter(p=>p.id!==hit.id));
+                return;
+            }
+            else{
+                console.log("Shaped undefined/Not Found");
+            }
+            // else if(hitTxt){
+            //     setPaths(prev=>prev.filter(p=>p.id!==hitTxt.id));
+            //     return;
+            // }
         }
         
         
@@ -275,7 +311,8 @@ export function Canvas() {
 	    
 	      setSelectedIds([]);
 	      setIsDrawing(true);
-	    
+
+        
 	      const id = Date.now();
 	      const newPath = {
 	          id,
@@ -285,15 +322,18 @@ export function Canvas() {
 	          start: pos,
 	          end: pos,
 	          text: '',
+            links:[links],
             color: color,
 	      };
         
         if( tool===TOOL_TEXT ){
             setEditingTextId(id);
             setEditingTextValue('');
-            setTextPosition({x,y});
+            setTimeout(()=>{
+                textareaRef.current?.focus();
+            },1);
+            setTextPosition({x:pos.x,y:pos.y});
             setPaths(prev=>[...prev,newPath]);
-            return;
         }
 
 
@@ -309,10 +349,34 @@ export function Canvas() {
     };
 
     
+    const handleDoubleClick=(e)=>{
+        if(tool!==TOOL_POINTER) return;
+        else{
+            const {x,y}=getEventCoords(e);
+            const ctx = canvasRef.current.getContext("2d");
+            console.log("Double Clicked");
+            const pos=toWorld(e);
+            const hit=paths.find(p=>
+                p.tool==="text" &&
+                    pos.x >= Math.min(p.start.x,p.end.x)-20 &&
+                    pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
+                    pos.y >= Math.min(p.start.y,p.end.y)-10 &&
+                    pos.y <= Math.max(p.start.y,p.end.y)+30 
+            );
+            if(hit){
+                //console.log([hit.id,hit.start.x,hit.start.y,hit.text]);
+                setEditingTextId(hit.id);
+                setEditingTextValue(hit.text);
+                setTextPosition({x:hit.start.x,y:hit.start.y});
+                return;
+            }
+        }
+    }
+    
     const handlePointerMove = (e) => { 
 	      const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
-
+        if(socket!==null) sendData(paths);
 	      if(dragging && selectedIds.length>0){
             const dx=pos.x-dragging.x;
             const dy=pos.y-dragging.y;
@@ -384,13 +448,42 @@ export function Canvas() {
     };
     
     function rand(j){
-        return (Math.random()+0.8)*2*j;
+        return (Math.random()+0.9)*1.6*j;
     }
 
+        // const handleKeyDown=e=>{
+        //     if(!editingTextId) return;
+        //     e.preventDefault();
+        //     console.log("In other Efffffdct");
+        //     setPaths(prev=>prev.map(p=>{
+        //         if(p.id!==editingTextId) return p;
+
+        //         if(e.key==='Backspace'){
+        //             return {...p,text:p.text.slice(0,-1)};
+        //         }else if(e.key==='Enter'){
+        //             return {...p,text:p.text+"\n"};
+        //         }else if(e.key==='Escape'){
+        //             setEditingTextId(null);
+        //             setTool(TOOL_POINTER);
+                   
+        //             return p;
+        //         }else if(e.key.length===1){
+        //             return {...p,text:p.text+e.key};
+        //         }
+        //         return p;
+        //     }));
+        // };
+    // useEffect(()=>{
+    //     if(textareaRef.current) window.addEventListener('keydown',handleKeyDown);
+    //     return ()=>window.removeEventListener('keydown',handleKeyDown);
+    // },[editingTextId]);
+
+    
+    
     
     useEffect(() => { 
         function sketchyRect(ctx,x,y,w,h,opts={}){
-            const {strokes=4,jitter=2}=opts;
+            const {strokes=4,jitter=3}=opts;
             ctx.globalAlpha=1;
             for(let i=0;i<strokes;i++){
                 ctx.beginPath();
@@ -444,6 +537,7 @@ export function Canvas() {
             }
         }
     
+        
         function sketchyArrow(ctx,x1,y1,x2,y2,opts={}){
             const {strokes=4,jitter=2}=opts;
             const headlen=25;
@@ -462,33 +556,94 @@ export function Canvas() {
                 const hy=y2+rand(jitter);
                 ctx.beginPath();
                 ctx.moveTo(hx,hy);
-                ctx.lineTo(hx-headlen*Math.cos(angle-Math.PI/6),hy-headlen*Math.sin(angle-Math.PI/6));
+                ctx.lineTo(hx-headlen*Math.cos(angle-Math.PI/6),
+                           hy-headlen*Math.sin(angle-Math.PI/6));
                 ctx.moveTo(hx,hy);
-                ctx.lineTo(hx-headlen*Math.cos(angle+Math.PI/6),hy-headlen*Math.sin(angle+Math.PI/6));
+                ctx.lineTo(hx-headlen*Math.cos(angle+Math.PI/6),
+                           hy-headlen*Math.sin(angle+Math.PI/6));
                 ctx.stroke();
                 ctx.closePath();
             }
             return;
         }
+
+        function sketchyCurvedArrow(ctx,x1,y1,x2,y2,opts={}){
+            const {strokes=4,jitter=2}=opts;
+            const headlen=25;
+            const dx=x2-x1;
+            const dy=y2-y1;
+            const midx=(x1+x2)/2;
+            const midy=(y1+y2)/2;
+            const offset=60+rand(jitter);
+            const angle1=Math.atan2(y2-y1,x2-x1);
+            const controlx=midx+(dx/2.5)/Math.sqrt((dx*dx)/2.3+(dy*dy)/2)*offset+rand(jitter);
+            const controly=midy+(dx/2.5)/Math.sqrt((dx*dx)/2.4+(dy*dy)/2)*offset+rand(jitter);
+            const angle=Math.atan2(y2-controly+rand(jitter),x2-controlx+rand(jitter));
+
+            for(let i = 0; i < strokes; i++){
+                ctx.beginPath();
+                ctx.moveTo(x1+rand(jitter),y1+rand(jitter));
+                // ctx.lineTo(x2+rand(jitter),y2+rand(jitter));
+                ctx.quadraticCurveTo(controlx,controly,x2,y2);
+                ctx.stroke();
+                ctx.closePath();
+                               
+                const hx=x2;
+                const hy=y2;
+                ctx.beginPath();
+                ctx.moveTo(hx,hy);
+                ctx.lineTo(hx-headlen*Math.cos(angle-Math.PI/6),
+                           hy-headlen*Math.sin(angle-Math.PI/6));
+                ctx.moveTo(hx,hy);
+                ctx.lineTo(hx-headlen*Math.cos(angle+Math.PI/6),
+                           hy-headlen*Math.sin(angle+Math.PI/6));
+                ctx.stroke();
+                ctx.closePath();
+            }
+            return;
+        }
+
+        function sketchyLink(link){
+            return;
+        }
+        
     
 	      const canvas = canvasRef.current;
 	      const ctx = canvas.getContext('2d');
 	      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-                
+        if(grid){
+            const gridSize=30;
+            ctx.strokeStyle=darkMode?'#2224':'#ddd4';
+            ctx.lineWidth=1;
+            for(let x=(offset.x%gridSize);x<=canvas.width;x+=gridSize){
+                ctx.beginPath();
+                ctx.moveTo(x,0);
+                ctx.lineTo(x,canvas.height);
+                ctx.stroke();
+            }
+            for(let y=(offset.y%gridSize);y<=canvas.height;y+=gridSize){
+                ctx.beginPath();
+                ctx.moveTo(0,y);
+                ctx.lineTo(canvas.width,y);
+                ctx.stroke();
+            }
+        }
         ctx.translate(offset.x,offset.y);
 //        ctx.strokeStyle=color;
-	      const drawPath = (path) => {
+
+        const drawPath = (path) => {
 	          if (!path) return;
 	          ctx.beginPath();
-            const { tool, points, start, end, text, color } = path;            
+            const { tool, points, start, end, text, link, color } = path;       
 	          switch (tool) {
 	          case TOOL_PEN:
                 ctx.strokeStyle=color;
-	              ctx.lineWidth=3;
+	              ctx.lineWidth=4;
                 ctx.lineJoin="round";
                 ctx.lineCap="round";
+                
 		            ctx.moveTo(points[0].x, points[0].y);
 		            points.forEach(p => ctx.lineTo(p.x, p.y));
                 ctx.stroke();
@@ -505,8 +660,8 @@ export function Canvas() {
 	          case TOOL_RECT:
                 ctx.strokeStyle=color;
                 ctx.fillStyle=color+"02";
-                ctx.lineWidth=1;
-                sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y,{strokes:8,jitter:3});
+                ctx.lineWidth=2;
+                sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y);
                 //ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
                 break;
 	          case TOOL_CIRCLE:
@@ -529,102 +684,211 @@ export function Canvas() {
                     ctx.strokeStyle=color;
                     ctx.fillStyle=color;
                     ctx.font = "28px Schoolbell,Single Day, Monospace,cursive";
+                    ctx.textAlign="left";
+                    ctx.textBaseLine="bottom";
+                   
                     const lines=text.split('\n');
-                    lines.forEach((line,i)=>ctx.fillText(line,start.x+2,start.y+28*(i)+28));
+                    lines.forEach((line,i)=>ctx.fillText(line,start.x*1,start.y+28*(i)+28));                    
 		            }
 		            break;
+            case TOOL_SPLINEARROW:
+                ctx.strokeStyle=color;
+                ctx.lineWidth=2;
+                sketchyCurvedArrow(ctx,start.x,start.y,end.x,end.y);
+                break;
+            case TOOL_LINK:
+                sketchyLink(links);
             default:
                 break;
 	          }
-            
 	      };
+        if(receivedPaths[0]) receivedPaths[0].forEach(drawPath);
 	      paths.forEach(drawPath);
         ctx.restore();
-    }, [paths,offset,scale]);
-    
-    // const drawArrow = (ctx, start, end) => { 
-	  //     const headlen = 20;
-	  //     const dx = end.x - start.x;
-	  //     const dy = end.y - start.y;
-	  //     const angle = Math.atan2(dy, dx);
-    //     ctx.beginPath();
-	  //     ctx.moveTo(start.x, start.y);
-	  //     ctx.lineTo(end.x, end.y);
-	  //     ctx.moveTo(end.x, end.y);
-	  //     ctx.lineTo(end.x - headlen * Math.cos(angle - Math.PI / 6), end.y - headlen * Math.sin(angle - Math.PI / 6));
-	  //     ctx.moveTo(end.x, end.y);
-	  //     ctx.lineTo(end.x - headlen * Math.cos(angle + Math.PI / 6), end.y - headlen * Math.sin(angle + Math.PI / 6));
-	  //     ctx.stroke();
-    //     return;
-    // };
-    
-    const applyTextEdit = () => {
+    }, [paths,receivedPaths,offset,scale,darkMode,grid]);
+
+    useEffect(()=>{
+        if(editingTextId){
+            setLongestWordSize(editingTextValue.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length);
+            setPaths(prev => prev.map(p => p.id === editingTextId ? { ...p, text: editingTextValue } : p) ); 
+        }
+        else return;
+        
+    },[editingTextId,editingTextValue,longestWordSize])
+
+    const  applyTextEdit = () => {
+        if (!editingTextId) return ;
         setPaths(prev => prev.map(p => p.id === editingTextId ? { ...p, text: editingTextValue } : p) ); 
+        setTool(TOOL_POINTER);
         setEditingTextId(null);
         setEditingTextValue('');
-        setTool('pointer');
+    }
+    const backendAPI='https://note-down-backend.onrender.com';
+    //const backendAPI='http://localhost:5000';
+    useEffect(()=>{
+        //ws.current=new WebSocket('https://note-down-backend.onrender.com');
+        const newSocket=io(backendAPI);
+        setSocket(newSocket);
+        // ws.current.onopen=()=> console.log('Connected to Socket server');
+
+        // ws.current.onmessage=(msg)=>{
+        //     const data=JSON.parse(msg.data);
+        //     if(data.payload) {setReceivedPaths(data.payload);setConnection(true);}
+        //     if(data.error) {alert(data.error);setConnection(false);}
+        // };
+        console.log("Socket : ",newSocket);
+        newSocket.on('message',(msg)=>{
+            const data=JSON.parse(msg);
+
+            if(data.payload){setReceivedPaths(data.payload);setConnection(true);}
+            if(data.error){alert(data.error);setConnection(false);}
+        });
+        //return ()=> ws.current.close(); 
+        return ()=>newSocket.disconnect();
+    },[]);
+
+
+    const registerUser=()=>{
+        if(userId===targetId) {alert("User ID & Target ID cannot be same.");return ;}
+        //ws.current.send(JSON.stringify({type:'register',userId}));
+        socket.emit('message',JSON.stringify({type:'register',userId}));
+        setConnection(true);
+        setCollab(false);
     };
 
+    const sendData=()=>{
+        // ws.current.send(JSON.stringify({
+        //     type:'send',
+        //     userId,
+        //     targetId,
+        //     payload:[paths]
+        // }));
+        socket.emit('message',JSON.stringify({
+            type:'send',
+            userId,
+            targetId,
+            payload:[paths]
+        }));
+    };
+    
     return (
-          <div>
+        <div style={{background:darkMode?"black":"#fffffd"}}>
             <div className="menu">
-                <button onClick={handleNew}><Plus></Plus></button>
-                <button onClick={()=>setShowModal(true)}><FolderOpen></FolderOpen></button>
-                <button onClick={()=>setSaveModal(true)}><Save></Save></button>
-                <button onClick={()=>setShowModal(true)}><Trash2></Trash2></button>
+                <button onClick={handleNew} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Plus size={18}></Plus></button>
+                <button onClick={()=>setShowModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><FolderOpen size={18}></FolderOpen></button>
+                <button onClick={()=>setSaveModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Save size={18}></Save></button>
+                <button onClick={()=>setShowModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Trash2 size={18}></Trash2></button>
             </div>
             
             <div className="hist-tools">
-                <button onClick={undo}><Undo2></Undo2></button>
-                <button onClick={redo}><Redo2></Redo2></button>
-            <button onClick={() => setPaths([])}><Delete/></button>
-          </div>
+                <button onClick={undo} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Undo2 size={18}></Undo2></button>
+                <button onClick={redo} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Redo2 size={18}></Redo2></button>
+                <button onClick={() => setPaths([])} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Delete size={18}></Delete></button>        
+            </div>
 
+        <div className="theme-mode">
+            {darkMode===true &&
+             <button
+                 name="Darkmode"
+                 style={{background:'transparent',color:'#fffffd'}}
+                 onClick={()=>{setDarkMode(false)}}
+             >
+                 <Moon size={18}/>
+             </button>}
+            {darkMode===false &&
+             <button
+                 name='Lightmode'
+                 style={{background:'transparent',color:'black'}}
+                 onClick={()=>setDarkMode(true)}
+             >
+                 <Sun size={18}/>
+             </button>}
+            <button
+                className='gridButton'
+                style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000041':'#ffffff31'}}
+                onClick={()=>grid?setGrid(false):setGrid(true)}>
+                <Grid2x2 size={18}></Grid2x2>
+            </button>
+        </div>
         
         <div className="toolbar">
             <input type="color" value={color} onChange={handleColorChange}/>
-            <button onClick={() => setTool(TOOL_POINTER)}><MousePointer2></MousePointer2></button>
-            <button onClick={() => setTool(TOOL_PEN)}><LineSquiggle></LineSquiggle></button>
-            <button onClick={() => setTool(TOOL_LINE)}><PencilLineIcon></PencilLineIcon></button>
-            <button onClick={() => setTool(TOOL_RECT)}><SquareIcon></SquareIcon></button>
-            <button onClick={() => setTool(TOOL_CIRCLE)}><Circle></Circle></button>
-            <button onClick={() => setTool(TOOL_ARROW)}><ArrowUpLeft></ArrowUpLeft></button>
-            <button onClick={() => setTool(TOOL_TEXT)}><Baseline></Baseline></button>
-            <button onClick={() => setTool(TOOL_SELECT)}><LucideSquareDashedMousePointer></LucideSquareDashedMousePointer></button>
-            <button onClick={() => setTool(TOOL_PAN)}><Move></Move></button>
+            <button onClick={() => setTool(TOOL_POINTER)} style={{color:darkMode?'#fffffd':'black'}}><MousePointer2 size={18}></MousePointer2></button>
+            <button onClick={() => setTool(TOOL_ERASER)} style={{color:darkMode?'#fffffd':'black'}}><Eraser size={18}></Eraser></button>
+            <button onClick={() => setTool(TOOL_PEN)} style={{color:darkMode?'#fffffd':'black'}}><LineSquiggle size={18}></LineSquiggle></button>
+            <button onClick={() => setTool(TOOL_LINE)} style={{color:darkMode?'#fffffd':'black'}}><PencilLineIcon size={18}></PencilLineIcon></button>
+            <button onClick={() => setTool(TOOL_RECT)} style={{color:darkMode?'#fffffd':'black'}}><SquareIcon size={18}></SquareIcon></button>
+            <button onClick={() => setTool(TOOL_CIRCLE)} style={{color:darkMode?'#fffffd':'black'}}><Circle size={18}></Circle></button>
+            <button onClick={() => setTool(TOOL_ARROW)} style={{color:darkMode?'#fffffd':'black'}}><ArrowUpLeft size={18}></ArrowUpLeft></button>
+            <button onClick={() => setTool(TOOL_TEXT)} style={{color:darkMode?'#fffffd':'black'}}><Baseline size={18}></Baseline></button>
+            <button onClick={() => setTool(TOOL_SPLINEARROW)} style={{color:darkMode?'#fffffd':'black'}}><Undo size={18}/></button>               
+            <button onClick={() => setTool(TOOL_SELECT)} style={{color:darkMode?'#fffffd':'black'}}><LucideSquareDashedMousePointer size={18}></LucideSquareDashedMousePointer></button>
+            <button onClick={() => setTool(TOOL_PAN)} style={{color:darkMode?'#fffffd':'black'}}><Move size={18}></Move></button>
         </div>
 
         <div className="toolid" style={{background:"transparent",boxShadow:`0 0 4px ${color}`,color:color}}>
-            {tool}
+            {tool} <br/> 
         </div>
+
+        <div className="collab" style={{background:"transparent"}}>
+            <button
+                onClick={()=>collab?setCollab(false):setCollab(true)}
+                style={{color:(connection)?"green":(darkMode)?"#fffffd":'black'}}
+            ><Cable size={18}/></button>
+        </div>
+
+        {collab && (
+        <div className="ids">
+            <input
+                placeholder="Your User ID:"
+                value={userId}
+                style={{color:darkMode?'#fffffd':'#333A'}}
+                onChange={(e)=>setUserId(e.target.value)}
+            ></input>
+            <input
+                placeholder="Target User ID:"
+                value={targetId}
+                style={{color:darkMode?'#fffffd':'#333A'}}
+                onChange={(e)=>setTargetId(e.target.value)}
+            />
+            <button onClick={registerUser} style={{color:darkMode?'#fffffd':'#333A'}} >Register</button><br/>
+        </div>
+        )}          
         
         {editingTextId && (
             <textarea
                 ref={textareaRef}
+                rows={editingTextValue.split('\n').length}
+                cols={longestWordSize/2}
                 style={{
-                    position:"absolute",
-                    fontSize:"28px",
-                    margin:"0",
-                    left:textPosition?textPosition.x:0,
-                    top:textPosition?textPosition.y:0,
-                    background:"white",
-                    minWidth:"1ch"
+                    opacity:'0.2',
+                    position:'absolute',
+                    color:'white',
+                    caretColor:'black',
+                    left:textPosition.x+offset.x,
+                    top:textPosition.y+offset.y,
+                    resize:'none',
+                    overflow:'hidden',
+                    //height:`${editingTextValue.split('\n').length}ch`,
+                    width:`${longestWordSize}ch`,
+                    fontSize:'27.8px',
+                    lineHeight:'1.1',
+                    border:'solid 1px grey'
                 }}
-                row={1}
                 value={editingTextValue}
                 onChange={(e)=>setEditingTextValue(e.target.value)}
-                onMouseLeave={applyTextEdit}
-                onTouchEnd={applyTextEdit}
-                onKeyDown={(e)=>{if(e.key==="Escape") applyTextEdit();}}
+                onMouseLeave={(e)=>applyTextEdit()}
+                onTouchEnd={(e)=>applyTextEdit()}
+                onFocusChange={(e)=>applyTextEdit()}
                 autoFocus
-            />
+            ></textarea>
         )}
         
         <canvas
             ref={canvasRef}
-            width={window.innerWidth}
-            height={window.innerHeight}
-            style={{ touchAction: "none",cursor:tool==="select" || tool==="pan"?"grab":tool==="pointer" ? "default":"crosshair",display:"block" }}
+            width={window.innerWidth*2.3}
+            height={window.innerHeight*2.3}
+            style={{background:darkMode?'#030303':'#fffffd', touchAction: "none",cursor:tool==="select" || tool==="pan"?"grab":tool==="pointer" ? "default":"crosshair",display:"block" }}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
             onMouseUp={handlePointerUp}

@@ -1,14 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Single+Day&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Schoolbell&display=swap');
 body{
-    background: white;
 }
 .app{
     position: relative;
+    height:100dvh;
+    width:100dvw;
 }
+
 .nav-bar{
   position: absolute;
-  background-color: #000;
+  background: #777;
+  backdrop-filter:blur(9px);
   left: 5px;
   top:50%;
   translate:-100% -50%;
@@ -19,20 +22,23 @@ body{
   align-items: center;
   width: 10px;
   height: 50px;
-  padding: 0.2vw;
+  padding: 5px;
   border: none; 
   border-radius: 20vh;
-  box-shadow: #444 0 0 5px;
+  box-shadow: #6665 0 0 10px ,#999 0 0 2px;
   z-index: 4;
 }
+
 .nav-bar button{
     margin: 0;
     display: none;
     border: none;
     width:0;
     height:0;
+    backdrop-filter:blur(0px);
     background-color: transparent;
-    color: #fff;
+    color: #999;
+    mixblend-mode:difference;
     border-radius: 20vh;
 }
 .dynamic-navbar{
@@ -47,11 +53,16 @@ body{
     z-index: 10;
 }
 .dynamic-navbar:hover .nav-bar{
-    animation:open 0.2s forwards ease-out;
+    animation:open 0.6s forwards ease-out;
 }
+.dynamic-navbar:not(:hover) .nav-bar{
+    animation:close 0.6s forwards ease-in;
+}
+
 .dynamic-navbar:focus .nav-bar{
     animation:open 0.2s forwards ease-out;
 }
+
 .nav-bar:hover{
     animation:open 0.3s forwards ease-out;
 }
@@ -81,17 +92,32 @@ body{
         width:40px;
         height:134px;
         content: none;
+        background: linear-gradient(226deg,#5553,#eee3);
+    }
+}
+
+@keyframes close{
+    from{
+        background: linear-gradient(226deg,#aaa3,#fff3);
+        translate:5px -50%;
+        width:40px;
+        height:134px;
+        content: none;
+    }
+    to{
+        background: #444;
+        width:10px;
+        height: 40px;
     }
 }
 .dynamic-navbar:focus,.dynamic-navbar:hover button{
     display:flex;
-    animation:focus-color 0.5s forwards ease-in-out;
+    animation:focus-color 0.9s forwards ease-in-out;
 }
 @keyframes focus-color{
     0%{
         width: 0px;
         height:0px;
-        color:transparent;
     }
     100%{
         width:fit-content;
@@ -100,16 +126,19 @@ body{
 }
 
 .dynamic-navbar .nav-bar button:hover,button:focus {
-  color: #000;
-  background-color: white;
+    color: #4a3;
+    height: fit-content;
+    width:fit-content;
+    background: #4e32;
 }
 
 @media (max-width:786px) and (max-height:1080px) {
 .nav-bar{
-    height: 60px;
+    height: 50px;
     width: 15px;
-    padding: 0.5vh;
-    justify-content: center;
+    padding: 5px;
+    justify-content: space-between;
+    align-items: center;
 }
 }
 .nav-bar button{

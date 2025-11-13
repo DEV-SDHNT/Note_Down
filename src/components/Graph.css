@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Single+Day&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Schoolbell&display=swap');
+
+.nodebar{
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    translate:-50%;
+    zIndex: 10;
+    width: 80vw;
+    overflow-y: scroll;
+    scrollbar-width:none;
+    padding: 5px;
+    width: fit-content;
+    border:none;
+    border-radius: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap:1px;
+    box-shadow:#3333 0 0 5px;
+}
+
+.nodebar input{
+    border: grey solid 1px;
+    border-radius: 20px;
+    font-size: 19px;
+    font-family: "School Bell";
+    width: 20vw;
+}
+
+.nodetype{
+    position:fixed;
+    z-index: 20;
+    left:50%;
+    top:10px;
+    backdrop-filter:blur(2px);
+    text-transform: uppercase;
+    border:solid 1px grey;
+    padding:4px;
+    border-radius:10px;
+    translate:-50%;
+}
+
+.nodebar .color-input{
+    border: none;
+    height: 25px;
+    width:25px;
+    padding:0;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    appearance:none;
+}
+
+.nodebar input::-webkit-color-swatch-wrapper{
+    padding:0;
+}
+
+.nodebar input::-webkit-color-swatch{
+    border:solid 1px;
+    border-radius: 50%;
+}
+
+.nodebar input::-moz-color-swatch{
+    border:solid 1px;
+    border-radius: 50%;
+}
+
+.nodebar button{
+    background: #fff;
+    color:black;
+    border-radius: 30vh;
+    margin: 0;
+    display:flex;
+    padding:2px;
+    height: 35px;
+    width:35px;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    border:none;
+}
+.nodebar button:hover{
+    background: #333;
+    color:#fff;
+}
+@media (max-width:786px) and (max-height:1080px) {
+    .nodebar{
+        flex-direction: row;
+        bottom:1vh;
+        height: fit-content;
+        left:50%;
+        width: 90vw;
+        translate:-50%;
+    }
+}

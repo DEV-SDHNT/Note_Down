@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Schoolbell&display=swap');
 html{
     margin: 0;
+    /* filter:invert(1); */
 }
 *{
     margin: 0;
@@ -11,24 +12,95 @@ canvas{
     touch-action: none;
     background-color: #FFf;
     border: none;
+    overflow: hidden;
 }
 
 textarea{
     font-family: 'Schoolbell','Single Day',cursive;
-    height: max-content;
     white-space: nowrap;
-    resize: none;
-    overflow: hidden;
-    border: 1px solid black;
+    overflow-anchor:none;
+    scrollbar-width:none;
+    border: solid 1px grey;
+    border-radius: 10px;
+}
+.collab{
+    position: fixed;
+    top:10px;
+    right:110px;
+    border: none;
+    box-shadow: #ccc 0 0 10px;
+    border-radius: 40px;
+}
+.collab button{
+    border:none;
+    background: transparent;
+    backdrop-filter:blur(3px);
+    border-radius: 30vh;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    height: 35px;
+    width:35px;
+}
+
+.ids{
+    background: linear-gradient(54deg, #4444,#aaa3);
+    background-size: 100%;
+    padding:4px;
+    border-radius: 22px;
+    backdrop-filter:blur(3px);
+    position: fixed;
+    right:20px;
+    top:50%;
+    translate:0px -50%;
+    margin: 0;
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap:3px;
+}
+
+.ids input{
+    max-width: 90vw;
+    width:fit-content;
+    height:20px;
+    padding:8px;
+    background: transparent;
+    backdrop-filter:blur(3px);
+    border:none;
+    box-shadow: #3333 0 0 10px;
+    border-radius: 30px;
+}
+.ids button{
+    font-size: 14px;
+    background: #9994;
+    color:white;
+    box-shadow: #9993 0 0 3px;
+    border: none;
+    padding-inline:8px;
+    margin: 0;
+    height: 25px;
+    border-radius: 30px;
+}
+.ids button:hover{
+    background: #AF44;
+    color:#360;
+    animation: colorChange 5s infinite alternate ease;
+}
+.ids button:focus{
+    background: #AF44;
+    color:#360;
+    animation: colorChange 5s infinite alternate ease;
 }
 
 .toolid{
-    font-size: 17px;
+    font-size: 14px;
     text-transform: uppercase;
     position: fixed;
     left:50%;
     top:0.8vh;
-    min-width: 10vw;
+    min-width: 9vw;
     text-align: center;
     padding-block: 0.4vh;
     padding-inline:1vw;
@@ -41,22 +113,27 @@ textarea{
     -moz-appearance:none;
     appearance:none;
     background: transparent;
-    backdrop-filter:blur(4px);
-    height: 30px;
-    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 25px;
+    width: 25px;
     border: none;
     border-radius: 50%;
-    margin-left: 5px;
+    margin-left: 0px;
 }
 .toolbar input::-webkit-color-swatch-wrapper{
-    padding:0;
+    padding:0px;
 }
 .toolbar input::-webkit-color-swatch{
-    border:solid 1px;
-    border-radius: 50%;
+    border:solid 1px black;
+    height:20px;
+    width:25px;
+    padding:0px;
+    border-radius: 150px;
 }
 .toolbar input::-moz-color-swatch{
-    border:solid 1px;
+    border:solid 1px black;
     border-radius: 50%;
 }
 
@@ -69,28 +146,31 @@ textarea{
     display: flex;
     justify-content: center;
 }
+
 .toolbar{
-    box-shadow: 0 0 5px #aaa;
-    width: fit-content;
+    box-shadow: 0 0 5px #8885;
+    width: fit-10px;
     border-radius:30px;
     backdrop-filter:blur(3px);
     position: fixed;
     bottom:1vh;
     left:50%;
+    z-index: 3;
     translate:-50%;
     display: flex;
-    padding:2px;
+    padding:5px;
     justify-content: space-around;
     align-items: center;
 }
+
 .toolbar button{
     border: none;
     border-radius: 30px;
     background:transparent;
     backdrop-filter:blur(3px);
     color:black;
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -98,19 +178,28 @@ textarea{
     margin:0 0 0 0;
 }
 .toolbar button:hover{
-    background: black;
-    color: white;
+    background: #AF44;
+    color:#360;
+    animation: colorChange 5s infinite alternate ease;
 }
 .toolbar button:focus{
-    background: black;
-    color: white;
+    background: #AF44;
+    color:#360;
+    animation: colorChange 5s infinite alternate ease;
 }
+
+@keyframes colorChange{
+    from{filter:hue-rotate(0deg);}
+    to{filter:hue-rotate(360deg);}
+}
+
 .hist-tools{
-    box-shadow: 0 0 5px #aaa;
-    width: fit-content;
+    box-shadow: 0 0 5px #8885;
+    width: fit-10px;
     border-radius:30px;
     position: fixed;
     top:1vh;
+    z-index: 3;
     backdrop-filter:blur(4px);
     right:1vw;
     display: flex;
@@ -118,13 +207,11 @@ textarea{
     padding:2px;
 }
 .hist-tools button{
-    background:transparent;
     backdrop-filter:blur(4px);
-    color:black;
     border: none;
     border-radius: 30px;
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -132,17 +219,16 @@ textarea{
     padding: 0px;
 }
 .hist-tools button:hover{
-    background:black;
-    color:white;    
+    filter:invert(1);
 }
 .hist-tools button:focus{
-    background:black;
-    color:white;    
+    filter:invert(1);
 }
 
 .menu{
-    box-shadow: 0 0 5px #aaa;
-    width: fit-content;
+    z-index: 3;
+    box-shadow: 0 0 5px #8885;
+    width: fit-10px;
     border-radius:30px;
     position: fixed;
     backdrop-filter:blur(4px);
@@ -156,8 +242,8 @@ textarea{
     background:transparent;
     backdrop-filter:blur(4px);
     color:black;
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -165,10 +251,58 @@ textarea{
     padding: 8px;
 }
 .menu button:hover{
-    background: black;
-    color:white;
+    filter:invert(1);
 }
 .menu button:focus{
-    background: black;
-    color:white;
+    filter:invert(1);
+}
+
+.theme-mode{
+    position: fixed;
+    top:1vh;
+    padding:3px;
+    display:flex;
+    flex-direction: column-reverse;
+    gap:10px;
+    right:60px;
+    border-radius: 10vh;
+}
+.theme-mode button{
+    background: transparent;
+    backdrop-filter:blur(3px);
+    border: none;
+    height:35px;
+    width:35px;
+    padding:8px;
+    border-radius: 10vh;
+    box-shadow: #8885 0 0 10px;
+}
+.theme-mode .gridButton:hover{
+    filter:invert(1);
+}
+.theme-mode .gridButton:focus{
+    filter:invert(1);
+}
+
+
+@media (max-width:786px) and (max-height:1080px) {
+    .toolbar{
+        width: 94vw;
+        overflow-x: scroll;
+        scrollbar-width:none;
+    }
+    .toolbar input{
+        height:25px;
+        width: 25px;
+    }
+
+    .toolbar button{
+        height:32px;
+    }
+    
+    .theme-mode{
+        top:1vh;
+        right:50px;
+    }
+
 }

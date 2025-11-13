@@ -2,7 +2,7 @@ import "./Editor.css";
 import React, { useState, useEffect, useRef } from 'react';
 import { Remarkable } from 'remarkable';
 import {openDB} from 'idb';
-import { Trash,Plus,Save,Trash2,FolderOpen,Maximize2,Minimize2 } from "lucide-react";
+import { Trash,Plus,Save,Trash2,FolderOpen,Eye,EyeClosed,Moon,Sun } from "lucide-react";
 
 const md = new Remarkable({breaks:true});
 
@@ -43,7 +43,7 @@ export function Editor() {
     const [filename,setFilename]=useState("untitled.md");
     const [fileList,setFileList]=useState([]);
     const [fullScreen,setFullScreen]=useState(false);
-    
+    const [darkMode,setDarkMode]=useState(false);
     const textareaRef=useRef(null);
     const dbRef=useRef(null);
     
@@ -128,51 +128,92 @@ export function Editor() {
                         <p className="file-name">{filename}</p>
                     </div>
                     <div className="menu-buttons">
-                        <button onClick={()=>handleNewFile(filename)}><Plus size={21}/></button>
-                        <button onClick={()=>setShowModal(true)}><FolderOpen size={21}/></button>
-                        <button onClick={()=>setSaveModal(true)}><Save size={21}/></button>
-                        <button onClick={()=>{setShowModal(true)}}><Trash2 size={21}/></button>
+                        <button onClick={()=>handleNewFile(filename)}><Plus size={18}/></button>
+                        <button onClick={()=>setShowModal(true)}><FolderOpen size={18}/></button>
+                        <button onClick={()=>setSaveModal(true)}><Save size={18}/></button>
+                        <button onClick={()=>{setShowModal(true)}}><Trash2 size={18}/></button>
                     </div>
                 </div>
             </div>
                 
-            <div className="workspace">
+            <div className="workspace"
+                 style={{
+                     background:darkMode?'#222':'white',
+                     color:darkMode?'white':'black'
+                 }}>
                 <textarea
                     ref={textareaRef}
                     className="editor"
                     default=" "
-                    placeholder="Write notes here..."
+                    placeholder="Write Markdown notes here..."
                     value={markdown}
                     onChange={(e)=>setMarkdown(e.target.value)}
+                    style={{
+                        background:darkMode?'#030303':'#fffffd',
+                        color:darkMode?'#fffffd':'#030303'
+                    }}
                 ></textarea>
 
                 <div
                     className="preview"
                     style={{
+                        display:fullScreen?'block':'none',
                         position:fullScreen?'fixed':'relative',
                         height:fullScreen?'98vh':'fit-content',
-                        width:fullScreen?'96vw':'96vw'
-                        
+                        width:fullScreen?'96vw':'96vw',
+                        background:darkMode?'#030303':'#fffffd',
+                        color:darkMode?'#fffffd':'#030303'
                     }}
                     dangerouslySetInnerHTML={{__html:preview}}>
                 </div>
-                <div className="mode">
-                    {fullScreen===true &&
-                     <button
-                         name="FullScreen "
-                         onClick={()=>{setFullScreen(false)}}
-                     >
-                        <Minimize2/>
-                    </button>}
-                    {fullScreen===false &&
-                     <button
-                         name='Normal'
-                         onClick={()=>setFullScreen(true)}
-                     >
-                        <Maximize2/>
-                     </button>}
-                </div>
             </div>
+                
+                <div className="theme">
+                    {darkMode===true &&
+                     <button
+                         name="Darkmode"
+                         style={{background:'#030303',color:'#fffffd'}}
+                         onClick={()=>{setDarkMode(false)}}
+                     >
+                         <Moon size={18}/>
+                     </button>}
+                    {darkMode===false &&
+                     <button
+                         name='Lightmode'
+                         style={{background:'transparent',color:'#030303'}}
+                         onClick={()=>setDarkMode(true)}
+                     >
+                         <Sun size={18}/>
+                     </button>}
+
+                    <div className="mode">
+                        {fullScreen===true &&
+                         <button
+                             name="FullScreen "
+                             style={{
+                                 background:darkMode?'#030303':'transparent',
+                                 color:darkMode?'#fffffd':'#030303'
+                             }}
+                             onClick={()=>{setFullScreen(false)}}
+                         >
+                             <EyeClosed size={18}/>
+                         </button>}
+                        {fullScreen===false &&
+                         <button
+                             name='Normal'
+                             style={{
+                                 background:darkMode?'#030303':'transparent',
+                                 color:darkMode?'#fffffd':'#030303'
+                             }}
+                             onClick={()=>setFullScreen(true)}
+                         >
+                             <Eye size={18}/>
+                         </button>}
+                    </div>
+                </div>
+                
+
+            
             { showModal && (
                 <div className="modal">
                     <div className="modal-container">
