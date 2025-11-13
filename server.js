@@ -5,8 +5,8 @@ const socketIo=require('socket.io');
 const cors=require('cors');
 
 const app=express();
-const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
-//const frontendAPI="https://notedown-qjw0.onrender.com";
+//const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
+const frontendAPI="https://notedown-qjw0.onrender.com";
 app.use(cors({origin:frontendAPI}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
