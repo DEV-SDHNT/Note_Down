@@ -5,12 +5,14 @@ const socketIo=require('socket.io');
 const cors=require('cors');
 
 const app=express();
-app.use(cors({origin:"https://dev-sdhnt.github.io/Note_Down/"}));
+//const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
+const frontendAPI="https://notedown-qjw0.onrender.com";
+app.use(cors({origin:frontendAPI}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
 const wss=socketIo(server,{
     cors:{
-        origin:"https://dev-sdhnt.github.io/Note_Down/",
+        origin:frontendAPI,
         //origin:"http://localhost:3020",
         methods:['GET','POST'],
     },
