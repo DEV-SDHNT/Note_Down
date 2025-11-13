@@ -5,8 +5,8 @@ const socketIo=require('socket.io');
 const cors=require('cors');
 
 const app=express();
-//const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
-const frontendAPI="https://notedown-qjw0.onrender.com";
+const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
+//const frontendAPI="https://notedown-qjw0.onrender.com";
 app.use(cors({origin:frontendAPI}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
@@ -14,7 +14,8 @@ const wss=socketIo(server,{
     cors:{
         origin:frontendAPI,
         //origin:"http://localhost:3020",
-        methods:['GET','POST'],
+        methods:['GET','POST']
+        
     },
 });
 const users=new Map();
@@ -26,7 +27,7 @@ wss.on('connection',(ws)=>{
         try{
             const msg=JSON.parse(data);
             const {type,userId,targetId,payload}=msg;
-            console.log('Type: ',msg.type,'| target id: ',msg.targetId,'| Payload: ',payload);
+            //console.log('Type: ',msg.type,'| target id: ',msg.targetId,'| Payload: ',payload);
             if(type==='register'){               
                 users.set(userId,ws);
                 ws.userId=userId;
@@ -35,7 +36,7 @@ wss.on('connection',(ws)=>{
             if(type==='send' && targetId && payload){
                 const targetSocket=users.get(targetId);
                 if(targetSocket){
-                    console.log('Payload send to ',targetId);
+                    //console.log('Payload send to ',targetId);
                     targetSocket.emit('message',JSON.stringify({
                         from:userId,
                         payload,
