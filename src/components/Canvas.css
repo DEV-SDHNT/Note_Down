@@ -304,5 +304,7 @@ textarea{
         top:1vh;
         right:50px;
     }
-
+    .collab{
+        right:98px;
+    }
 }
