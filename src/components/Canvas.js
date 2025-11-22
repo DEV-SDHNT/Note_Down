@@ -225,13 +225,12 @@ export function Canvas() {
     const handlePointerDown = (e) => { 
 	      const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
-//----------------Start-----------------------------------------------------
+        //----------------Start----------------------------------------------------->
         if(tool===TOOL_LINK) {
             
         }
-
-    //---------------End-------------------------------------------------------        
-
+        //---------------| End |---------------------------------------------------->      
+        
         const ctx = canvasRef.current.getContext("2d");	      
         if(tool===TOOL_PAN || e.button===1){
             setPanningEnabled(true);

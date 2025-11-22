@@ -40,8 +40,6 @@ const App=()=> {
                 {page==='Home' && <Home></Home>}
                 {page==='Editor' && <Editor></Editor>}
                 {page==='Canvas' && <Canvas></Canvas>}
-
-
             </div>
         </div>
     );
