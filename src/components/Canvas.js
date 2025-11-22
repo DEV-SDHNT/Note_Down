@@ -736,9 +736,9 @@ export function Canvas() {
         //     if(data.error) {alert(data.error);setConnection(false);}
         // };
         //console.log("Socket : ",newSocket);
-        newSocket.on('message',(msg)=>{
+        newSocket.on('collab',(msg)=>{
             const data=JSON.parse(msg);
-
+            //console.log('Message received');
             if(data.payload){setReceivedPaths(data.payload);setConnection(true);}
             if(data.error){alert(data.error);setConnection(false);}
         });
@@ -750,7 +750,7 @@ export function Canvas() {
     const registerUser=()=>{
         if(userId===targetId) {alert("User ID & Target ID cannot be same.");return ;}
         //ws.current.send(JSON.stringify({type:'register',userId}));
-        socket.emit('message',JSON.stringify({type:'register',userId}));
+        socket.emit('register',JSON.stringify({type:'register',userId}));
         setConnection(true);
         setCollab(false);
     };
