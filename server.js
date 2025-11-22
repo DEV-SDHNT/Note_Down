@@ -7,13 +7,13 @@ const cors=require('cors');
 const app=express();
 //const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
 const frontendAPI="https://notedown-qjw0.onrender.com";
+//const frontendAPI="http://localhost:3021"; 
 app.use(cors({origin:frontendAPI}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
 const wss=socketIo(server,{
     cors:{
         origin:frontendAPI,
-        //origin:"http://localhost:3020",
         methods:['GET','POST']
         
     },
@@ -23,27 +23,36 @@ const users=new Map();
 wss.on('connection',(ws)=>{
     console.log('New Connection');
 
+    ws.on('register',(data)=>{
+        const reg=JSON.parse(data);
+        const {type,userId}=reg;
+        users.set(userId,ws);
+        ws.userId=userId;
+        ws.join(userId);
+        console.log(`User Registered : ${userId}`);
+    });
+    
     ws.on('message',(data)=>{
         try{
             const msg=JSON.parse(data);
             const {type,userId,targetId,payload}=msg;
-            //console.log('Type: ',msg.type,'| target id: ',msg.targetId,'| Payload: ',payload);
-            if(type==='register'){               
-                users.set(userId,ws);
-                ws.userId=userId;
-                console.log(`User Registered : ${userId}`);
-            }
-            if(type==='send' && targetId && payload){
-                const targetSocket=users.get(targetId);
-                if(targetSocket){
-                    //console.log('Payload send to ',targetId);
-                    targetSocket.emit('message',JSON.stringify({
-                        from:userId,
-                        payload,
-                    }));
-                }else{
-                    ws.on('message',JSON.stringify({error:"User Not Found | Invalid Targed ID "}));
-                }
+          
+            if(targetId && payload){
+                wss.to(targetId).emit('collab',JSON.stringify({
+                    from:ws.userId,
+                    payload,
+                }));
+                console.log('From: ',ws.userId,'| To: ',targetId);
+                //const targetSocket=users.get(targetId);
+                // if(targetSocket){
+                //     console.log('|-->Payload send to ',targetId);
+                //     targetSocket.emit('message',JSON.stringify({
+                //         from:userId,
+                //         payload,
+                //     }));
+                // }else{
+                //     ws.on('message',JSON.stringify({error:"User Not Found | Invalid Targed ID "}));
+                // }
             }
         } catch(err){
             console.log('Error:',err);
