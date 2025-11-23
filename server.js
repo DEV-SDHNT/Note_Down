@@ -13,7 +13,7 @@ const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
 const wss=socketIo(server,{
     cors:{
-        origin:frontendAPI,
+        origin:"*",
         methods:['GET','POST']
         
     },
