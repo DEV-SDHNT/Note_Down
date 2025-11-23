@@ -8,7 +8,7 @@ const app=express();
 //const frontendAPI="https://dev-sdhnt.github.io/Note_Down/";
 const frontendAPI="https://notedown-qjw0.onrender.com";
 //const frontendAPI="http://localhost:3021"; 
-app.use(cors({origin:frontendAPI}));
+app.use(cors({origin:"*"}));
 const server=http.createServer(app);
 //const wss=new WebSocket.Server({server});
 const wss=socketIo(server,{
