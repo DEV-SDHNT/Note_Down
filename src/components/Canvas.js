@@ -722,11 +722,11 @@ export function Canvas() {
         setEditingTextId(null);
         setEditingTextValue('');
     }
-    const backendAPI='wss://note-down-backend.onrender.com';
+    const backendAPI='https://note-down-backend.onrender.com';
     //const backendAPI='http://localhost:5000';
     useEffect(()=>{
         //ws.current=new WebSocket('https://note-down-backend.onrender.com');
-        const newSocket=io(backendAPI);
+        const newSocket=io(backendAPI,{transport:["websocket"],secure:true});
         setSocket(newSocket);
         // ws.current.onopen=()=> console.log('Connected to Socket server');
 
