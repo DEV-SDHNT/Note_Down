@@ -23,15 +23,15 @@ body{
 
 .main .menu-bar{
     top:-40px;
-    background: #0003;
+    background: #5553;
     position: fixed;
     height: 50px;
-    width: 80px;
+    width: 10vw;
     left:50%;
     translate:-50%;
     display: flex;
     border-radius: 30px;
-    justify-content: end;
+    justify-content: center;
     align-items: center;
     gap:1vh;
     z-index: 3;
@@ -44,7 +44,7 @@ body{
     background: #0000;
     height:40px;
     padding:0.5vh;
-    width: 90px;
+    width: 50px;
     z-index: 4;
 }
 .main .dynamicbar:hover .menu-bar{
@@ -56,14 +56,15 @@ body{
 .main .dynamicbar:focus .menu-bar{
     animation: open-navbar 0.5s forwards ease-out;
 }
+
 @keyframes open-navbar{
     0%{
         width: 10vw;
     }
     100%{
         top:1vh;
-        background: #0000;
-        width: 98vw;
+        background: #5550;
+        width: 50vw;
         height: fit-content;
         padding:0.4vh;
     }
@@ -72,12 +73,12 @@ body{
     0%{
         top:1vh;
         background: #0000;
-        width: 98vw;
+        width: 5vw;
         height: fit-content;
         padding:0.4vh;
     }
     100%{
-        width: 15vw;
+        width: 10vw;
     }
 }
 .main .menu-bar .file{
@@ -144,8 +145,6 @@ body{
     display: none;
     justify-content: center;
     gap:1vh;
-    overflow: scroll;
-    scrollbar-width:none;
     box-shadow: #7770 0 0 8px;
     padding-inline:4px;
     padding-block:3px;
@@ -218,13 +217,18 @@ body{
     background: transparent;
     width: 99vw;
     height: 99.4vh;
-    font-size:19px;
+    /* font-size: 19px; */
     padding-inline:10px;
     font-family: 'Single Day';
     overflow: scroll;
     resize:horizontal;
     scrollbar-width:none;
     border: none;
+}
+.main .workspace .editor:focus{
+    outline: none;
+    box-shadow: none;
+    border-color:inherit;
 }
 .main .preview{
     width: 50vw;
@@ -265,6 +269,52 @@ body{
     position: relative;
 }
 
+.main .fontsize{
+    position: fixed;
+    left: 50%;
+    bottom: 10px;
+    padding: 13px;
+    background: #8883;
+    backdrop-filter:blur(2px);
+    padding-inline:10px ;
+    box-shadow: #8883 0 0 4px;
+    translate:-50%;
+    border-radius: 30px;
+}
+.main .fontsize input[type="range"]{
+    -webkit-appearance:none;
+    height: 5px;
+    border-radius: 40px;
+    background: linear-gradient(270deg, #3339,#4444);
+    outline: none;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
+.main .fontsize input[type="range"]::-webkit-slider-thumb{
+    -weblkit-appearance:none;
+    appearance:none;
+    background: linear-gradient(45deg,#3339,#3333);
+    box-shadow: #3337 0 0 10px;
+    width: 24px;
+    height: 24px;
+    border-radius:40px;
+    color: transparent;
+    border: none;
+    backdrop-filter:blur(10px);
+}
+.main .fontsize input[type="range"]::-moz-range-thumb{
+    -weblkit-appearance:none;
+    appearance:none;
+    background: linear-gradient(45deg,#3339,#3333);
+    box-shadow: #3337 0 0 10px;
+    width: 24px;
+    height: 24px;
+    border-radius:40px;
+    color: transparent;
+    border: none;
+    backdrop-filter:blur(13px);
+}
 .main .theme{
     position: fixed;
     bottom:10px;
@@ -439,7 +489,7 @@ body{
         padding:1.5vh;
         padding-inline:2vw;
         overflow: scroll;
-        border:solid 1px grey;
+        border:none;
         scrollbar-width:none;
     }
     .main .workspace .preview{

@@ -3,66 +3,90 @@
 :root{
     --angle:0deg;
 }
+
 *{
-    font-family: "Single Day",cursive;
-}
-body{
-    background: white;
+    font-family: "Single Day" ,"School Bell" ,Cursive;
 }
 
 .home-container{
-    background: url('../assets/homebackground.jpg') no-repeat;
+    background: url('../assets/homebackground.jpg') ;
+    backdrop-filter:blur(3px);
     background-size: cover;
     background-position: center;
     height: 100vh;
-    opacity: 0.7;
     width:100vw;
-    z-index: 2;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap:10px;
 }
+
+.indicator{
+    position: fixed;
+    left: 5px;
+    top:50%;
+    translate:-15px -50%;
+    display: flex;
+    align-items: center;
+}
+.indicator .indicator1{
+    position: fixed;
+    display: flex;
+    color: #3335;
+    animation:LR 0.7s infinite alternate ease-in;
+}
+.indicator .indicator2{
+    position: fixed;
+    margin: 10px;
+    display: flex;
+    color: #2225;
+    animation:LR 0.7s infinite alternate ease-in;
+    animation-delay: 0.1s;
+}
+@keyframes LR{
+    0%{
+        left: 10px;
+    }
+    100%{
+        left:20px;
+        color: transparent;
+    }
+}
+
+
 .grad{
     position: absolute;
-    background:linear-gradient(35deg,#fffe,#ffeb,#fff4);
+    background:linear-gradient(36deg,#effe,#cccb,#ffe3);
     height: 100vh;
+    background-size: 100%;
     width: 100vw;
-}
-.home-container .home-text{
-    z-index: 3;
-    /* border: solid #666 1px; */
-    border-radius: 30px;
-    width: 80vw;
     backdrop-filter:blur(2px);
-    /* animation:colorchange 15s ease-in-out alternate infinite;  */
+    z-index: -1;
 }
 
-.home-container .heading{
-    font-size: 55px;
-    display: flex;
-    border-radius: 30px;
+.home-container .home-text{
+    display:flex;
+    color: #333;
+    background: transparent;
+    flex-direction: column;
     justify-content: center;
-    color: #000;
-    padding: 4vh;
-}
-
-.home-container .intro{
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    padding:20px;
     border-radius: 20px;
-    padding: 4vh;
-    font-size: 18px;
-    width: 50%;
-    color: #111;
-    position: relative;
 }
 
-@keyframes colorchange{
-        from{
-        filter:hue-rotate(0deg);
-    }
-    to{
-        filter:hue-rotate(360deg);
-    }
+.home-container .home-text .heading{
+    font-size: 40px;
+    margin-bottom: 20px;
 }
+.home-container .home-text .welcome{
+    margin-bottom: 10px;
+    font-size: 25px;
+}
+
 @media (max-width:786px) and (max-height:1080px) {
     .home-container .home-text{
         width: 80%;

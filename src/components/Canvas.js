@@ -24,7 +24,7 @@ import {
     Grid2x2,
     Undo,
     Cable,
-    Merge
+    GitCompareArrows
 } from "lucide-react";
 import {openDB} from 'idb';
 
@@ -44,7 +44,6 @@ const TOOL_LINK='link';
 
 
 const DB_NAME = "notesDB";
-const STORE_NAME = "canvas";
 
 export function initDB() {
     const db=openDB(DB_NAME,1,{
@@ -72,58 +71,56 @@ export const getAllDrawing=async ()=>{
 
 
 export function Canvas() { 
-    const canvasRef = useRef(null); 
-    const [drawingId, setDrawingId]=useState(null);
+    const canvasRef = useRef(null);
+    
     const [drawingName, setDrawingName]=useState('untitled');
     const [tool, setTool] = useState(TOOL_POINTER); 
     const [isDrawing, setIsDrawing] = useState(false);
-    const [grid,setGrid]=useState(true);
+    const [grid, setGrid] = useState(true);
     const [paths, setPaths] = useState([])
     const [selectedIds, setSelectedIds] = useState(null)
 
     const [currentPath, setCurrentPath] = useState(null);
 
-    const [links,setLinks]=useState([]);
+    const [links, setLinks]=useState([]);
+    const [selectedNode,setSelectedNode]=useState(null);
     
     const [editingTextId, setEditingTextId] = useState(null);
     const [editingTextValue, setEditingTextValue] = useState([]);
-    const [textPosition,setTextPosition]=useState({x:0,y:0});
-    const [longestWordSize,setLongestWordSize]=useState(0);
-    
+    const [textPosition, setTextPosition]=useState({x:0,y:0});
+    const [longestWordSize, setLongestWordSize]=useState(0);
+
     const [history, setHistory] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
 
     const [showModal, setShowModal]=useState(false);
     const [showSaveModal, setSaveModal]=useState(false);
     const [drawingList, setDrawingList]=useState([]);    
-    const [dragging,setDragging]=useState(null);
+    const [dragging, setDragging]=useState(null);
 
-    const [startPos,setStartPos]=useState({x:0,y:0});
-    const [offset,setOffset]=useState({x:0,y:0});
-    const [isDragging,setIsDragging]=useState(false);
-    const [last,setLast]=useState({x:0,y:0});
-    const [panningEnabled,setPanningEnabled]=useState(false);
-    const [rects,setRects]=useState([]);
-
-    const [scale,setScale]=useState(1);
-    const [darkMode,setDarkMode]=useState(false);
-    const [color,setColor]=useState("#444444");
-    const [hovered,setHovered]=useState(false);
-    const [linkMode,setLinkMode]=useState(false);
-    const pinch=useRef({dist:0,scale:1});
-    const initialOffset=useRef({x:0,y:0});
+    const [offset, setOffset]=useState({x:0,y:0});
+    
+    const [last, setLast]=useState({x:0,y:0});
+    const [panningEnabled, setPanningEnabled]=useState(false);
+    
+    const [darkMode, setDarkMode]=useState(false);
+    const [color, setColor]=useState("#000000");
+    
     const dbRef=useRef(null);
     const textareaRef=useRef(null);
 
-    const [collab,setCollab]=useState(false);
-    const [socket,setSocket]=useState(null);
-    const [connection,setConnection]=useState(false);
-    const [userId,setUserId]=useState('');
-    const [targetId,setTargetId]=useState('');
-    const [receivedPaths,setReceivedPaths]=useState([]);
-    
+    const [collab, setCollab]=useState(false);
+    const [socket, setSocket]=useState(null);
+    const [connection, setConnection]=useState(false);
+    const [userId, setUserId]=useState('');
+    const [targetId, setTargetId]=useState('');
+    const [receivedPaths, setReceivedPaths]=useState([]);
 
-    const ws=useRef(null);
+    // For Zoom ::
+    //const touchDist=useRef(0);
+    //const scale=useRef(1);
+    //const offsetX=useRef(0);
+    //const offsetY=useRef(0);
 
     
     async function loadFileList() {
@@ -132,7 +129,7 @@ export function Canvas() {
         const keys=await store.getAllKeys();
         setDrawingList(keys);
     }
-    
+
     useEffect(()=>{
         (async ()=>{
             dbRef.current=await initDB();
@@ -140,17 +137,9 @@ export function Canvas() {
         })();
     },[]);
 
-    // useEffect(()=>{
-    //     if(!textareaRef.current) return;
-    //     textareaRef.current.textContent=editingTextValue||" ";
-    //     textareaRef.current.style.width=textareaRef.current.offsetWidth+6+"px";
-    // },[editingTextValue])
-    
-    
     const handleNew=()=>{
-	      setPaths([]);
-	      setDrawingId(null);
-	      setDrawingName('');
+	setPaths([]);	
+	setDrawingName('');
     };
     
     async function openFile(name) {
@@ -159,32 +148,29 @@ export function Canvas() {
         const file=await store.get(name);
         if(file) {
             setDrawingName(file.filename);
-            setPaths(file.paths);
-            //console.log("Opened : ",name,", Paths: ",file.paths);
-
+            setPaths(file.paths);            
             setShowModal(false);
             if (canvasRef.current) {
                 canvasRef.current.focus();
             }
         }
     };
-    
-    async function saveFile(name,paths) {
+
+    async function saveFile(name, paths) {
         if (!drawingName || drawingName==="untitled"){
             alert("Please enter a filename before saving");
             return;
         }
         const tx=dbRef.current.transaction('canvas',"readwrite");
         const store=tx.objectStore('canvas');
-   
-        await store.put({filename:name,paths});
-        //console.log("Saved",name,", Paths: ",paths);
+        const updatedAt=Date.now();
+        await store.put({filename:name,paths,updatedAt:updatedAt});
         await tx.done;
         await loadFileList();
         alert(`File ${drawingName} Saved`);
         setSaveModal(false);
     }
-    
+
     async function deleteFile(name){
         const tx=dbRef.current.transaction('canvas',"readwrite");
         const store=tx.objectStore('canvas');
@@ -197,164 +183,142 @@ export function Canvas() {
     };
     
     const getEventCoords = (e) => { 
-	      const canvas = canvasRef.current;
-	      const rect = canvas.getBoundingClientRect();
-	      if (e.touches && e.touches[0]) {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches[0]) {
             return { 
-		            x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top, isTouch: true, };
-	      }
-	      else if (e.nativeEvent) { 
+                x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top, isTouch: true, };
+        }
+        else if (e.nativeEvent) { 
             return { 
-		            x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, isTouch: false, };
-	      }
-	      return {x: 0, y: 0, isTouch: false };
+                x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, isTouch: false, };
+        }
+        //return {x: 0, y: 0, isTouch: false };
     };
-    
-    
+
     const toWorld=(e)=>{
         const {x,y}=getEventCoords(e);
         return { x:x-offset.x, y:y-offset.y };    
     }
-    
+
     const handleColorChange=(e)=>{
         setColor(e.target.value);
     }
 
-    
-    
-    const handlePointerDown = (e) => { 
-	      const { x, y } = getEventCoords(e);
-        const pos=toWorld(e);
-        //----------------Start----------------------------------------------------->
-        if(tool===TOOL_LINK) {
-            
+
+    const handlePointerDown = (e) => {
+        const { x, y } = getEventCoords(e);
+        const pos=toWorld(e);        
+        e.preventDefault();
+        if(tool===TOOL_LINK){
+            const node = paths.find(p => p.tool!=="pointer" &&
+                                    p.start && p.end &&
+                                    pos.x >= Math.min(p.start.x, p.end.x) -10 &&
+                                    pos.x <= Math.max(p.start.x, p.end.x) +10 &&
+                                    pos.y >= Math.min(p.start.y, p.end.y) -10 &&
+                                    pos.y <= Math.max(p.start.y, p.end.y) +10
+                                   );
+            if (node) {
+                if (!selectedNode) {
+                    setSelectedNode(node.id);
+                } else if (selectedNode !== node.id) {
+                    setLinks((prev) => [...prev, { from: selectedNode, to: node.id }]);
+                    setSelectedNode(null);
+                }
+            }
         }
-        //---------------| End |---------------------------------------------------->      
-        
-        const ctx = canvasRef.current.getContext("2d");	      
+
         if(tool===TOOL_PAN || e.button===1){
             setPanningEnabled(true);
             setIsDrawing(false);
-            setLast({x,y});
+            setLast({x:x,y:y});
             return;
         }
 
-        
-	      if(tool===TOOL_SELECT){
-            const ctx = canvasRef.current.getContext("2d");
+        if(tool===TOOL_SELECT){
             const hit = paths.find(p => p.tool!=="pointer" &&
                                    p.start && p.end &&
-		                               pos.x >= Math.min(p.start.x, p.end.x) -10 &&
-		                               pos.x <= Math.max(p.start.x, p.end.x) +10 &&
-		                               pos.y >= Math.min(p.start.y, p.end.y) -10 &&
-		                               pos.y <= Math.max(p.start.y, p.end.y) +10
+                                   pos.x >= Math.min(p.start.x, p.end.x) -10 &&
+                                   pos.x <= Math.max(p.start.x, p.end.x) +((p.text.length>0)?(p.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10):10) &&
+                                   pos.y >= Math.min(p.start.y, p.end.y) -10 &&
+                                   pos.y <= Math.max(p.start.y, p.end.y) +((p.text.length>0)?(p.text.split('\n').length*30):10)
                                   );
-            if (hit) {                
+            if (hit) {
                 setSelectedIds([hit.id]);
                 setDragging({x:pos.x,y:pos.y});
                 return;
             }
-            else{
-                console.log("Shaped undefined/Not Found");
-            }
         }
-
-	      if(tool===TOOL_ERASER){
+	
+        if(tool===TOOL_ERASER){
             const hit = paths.find(p => p.tool!=="pointer" &&
                                    p.start && p.end &&
-		                               pos.x >= Math.min(p.start.x, p.end.x) -10 &&
-		                               pos.x <= Math.max(p.start.x, p.end.x) -10 &&
-		                               pos.y >= Math.min(p.start.y, p.end.y) -10 &&
-		                               pos.y <= Math.max(p.start.y, p.end.y) +10
+                                   pos.x >= Math.min(p.start.x, p.end.x) -10  &&
+                                   pos.x <= Math.max(p.start.x, p.end.x) +((p.text.length>0)?(p.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10):10) &&
+                                   pos.y >= Math.min(p.start.y, p.end.y) -10 &&
+                                   pos.y <= Math.max(p.start.y, p.end.y) +((p.text.length>0)?(p.text.split('\n').length*30):10)
                                   );
-            // const hitTxt=paths.find(p=>p.tool==="text" &&
-            //                         pos.x >= Math.min(p.start.x,p.end.x)-10 &&
-            //                         pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
-            //                         pos.y >= Math.min(p.start.y,p.end.y)-20 &&
-            //                         pos.y <= Math.max(p.start.y,p.end.y)+30 
-            //                        );
             if (hit) {
-                //console.log("Shape hit:: ",hit);
                 setPaths(prev=>prev.filter(p=>p.id!==hit.id));
                 return;
             }
             else{
-                console.log("Shaped undefined/Not Found");
+                return;
             }
-            // else if(hitTxt){
-            //     setPaths(prev=>prev.filter(p=>p.id!==hitTxt.id));
-            //     return;
-            // }
         }
-        
-        
-        if(tool===TOOL_POINTER || tool===TOOL_SELECT){
-            const ctx = canvasRef.current.getContext("2d");
+
+
+        if(tool===TOOL_POINTER){
             const hitTxt=paths.find(p=>p.tool==="text" &&
                                     pos.x >= Math.min(p.start.x,p.end.x)-10 &&
-                                    pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
-                                    pos.y >= Math.min(p.start.y,p.end.y)-20 &&
-                                    pos.y <= Math.max(p.start.y,p.end.y)+30 
+                                    pos.x <= Math.max(p.start.x,p.end.x)+p.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10 &&
+                                    pos.y >= Math.min(p.start.y,p.end.y)-10 &&
+                                    pos.y <= Math.max(p.start.y,p.end.y)+p.text.split('\n').length*30
                                    );
             if(hitTxt){
-                //console.log("hitted");
-                //console.log("Text hit:: ",hitTxt.tool);
-                //console.log([hitTxt.id]);
                 setSelectedIds([hitTxt.id]);
                 setDragging({x:pos.x,y:pos.y});
                 return;
-            }else{
-                console.log("Text not found!!!")
             }
         }
-	    
-	      setSelectedIds([]);
-	      setIsDrawing(true);
+        
+        setSelectedIds([]);
+        setIsDrawing(true);
 
-        
-	      const id = Date.now();
-	      const newPath = {
-	          id,
-	          tool,
-	          //points: [{ x, y }], //default No Panning
+        const id = Date.now();
+        const newPath = {
+            id,
+            tool:tool,
             points:[pos],
-	          start: pos,
-	          end: pos,
-	          text: '',
-            links:[links],
+            start: pos,
+            end: pos,
+            text: '',
+            links:links,
             color: color,
-	      };
-        
+        };
         if( tool===TOOL_TEXT ){
             setEditingTextId(id);
-            setEditingTextValue('');
+            setEditingTextValue('Text');
             setTimeout(()=>{
                 textareaRef.current?.focus();
-            },1);
+            },1000);
             setTextPosition({x:pos.x,y:pos.y});
             setPaths(prev=>[...prev,newPath]);
         }
-
-
-        
-	    setCurrentPath(newPath);
-	    setPaths(prev => {
-	        const updated = [...prev, newPath];
-	        setHistory([...history, prev]);
-	        setRedoStack([]);
-	        return updated;
-	    });
-
+     
+        setCurrentPath(newPath);
+        setPaths(prev => {
+            const updated = [...prev, newPath];
+            setHistory([...history, prev]);
+            setRedoStack([]);
+            return updated;
+        });
     };
-
     
     const handleDoubleClick=(e)=>{
-        if(tool!==TOOL_POINTER) return;
-        else{
-            const {x,y}=getEventCoords(e);
             const ctx = canvasRef.current.getContext("2d");
-            console.log("Double Clicked");
             const pos=toWorld(e);
+            e.preventDefault();
             const hit=paths.find(p=>
                 p.tool==="text" &&
                     pos.x >= Math.min(p.start.x,p.end.x)-20 &&
@@ -363,20 +327,19 @@ export function Canvas() {
                     pos.y <= Math.max(p.start.y,p.end.y)+30 
             );
             if(hit){
-                //console.log([hit.id,hit.start.x,hit.start.y,hit.text]);
                 setEditingTextId(hit.id);
                 setEditingTextValue(hit.text);
                 setTextPosition({x:hit.start.x,y:hit.start.y});
-                return;
             }
-        }
+       
     }
     
     const handlePointerMove = (e) => { 
-	      const { x, y } = getEventCoords(e);
+        const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
-        if(socket!==null) sendData(paths);
-	      if(dragging && selectedIds.length>0){
+        e.preventDefault();
+        if(socket!=null) sendData(paths);
+        if(dragging && selectedIds.length>0){
             const dx=pos.x-dragging.x;
             const dy=pos.y-dragging.y;
             setPaths(prev=>prev.map(
@@ -395,27 +358,28 @@ export function Canvas() {
                     }
                 :p));
             setDragging({x:pos.x,y:pos.y});
-        };	    
+        };
 
         if(tool===TOOL_PAN && panningEnabled){
             const dx=x-last.x;
             const dy=y-last.y;
-            //console.log("Panning moved");
             setOffset((prev)=>({x:prev.x+dx,y:prev.y+dy}));
-            setLast({x:x,y:y});
+            //offsetX.current+=dx;
+            //offsetY.current+=dy;
+            setLast({x,y});
             return;
         }
-	      if (!isDrawing || !currentPath) return;
-        //setLast(toWorld);
-      
-	      setPaths(prev => prev.map(path => {
-	          if (path.id !== currentPath.id) return path;
-	          return {
-		            ...path,
-		            points: [...path.points, pos],
-		            end: pos,
-	          };
-	      }));  
+
+	if (!isDrawing || !currentPath) return;
+        
+        setPaths(prev => prev.map(path => {
+            if (path.id !== currentPath.id) return path;
+            return {
+                ...path,
+                points: [...path.points, pos],
+                end: pos,
+            };
+        }));
     };
     
     const handlePointerUp = () => { 
@@ -425,7 +389,7 @@ export function Canvas() {
         if(panningEnabled){
             setPanningEnabled(false);
             return;
-        }    
+        }
     };
     
     const undo = () => {
@@ -439,47 +403,17 @@ export function Canvas() {
     
     const redo = () => {
         if (redoStack.length > 0) {
-	          const next = redoStack[0];
-	          setHistory(prev => [...prev, paths]);
-	          setPaths(next);
-	          setRedoStack(redoStack.slice(1));
-	      }
+            const next = redoStack[0];
+            setHistory(prev => [...prev, paths]);
+            setPaths(next);
+            setRedoStack(redoStack.slice(1));
+        }
     };
-    
+        
     function rand(j){
-        return (Math.random()+0.9)*1.6*j;
-    }
+        return (Math.random()+0.9)*1.6*j/1;
+    }   
 
-        // const handleKeyDown=e=>{
-        //     if(!editingTextId) return;
-        //     e.preventDefault();
-        //     console.log("In other Efffffdct");
-        //     setPaths(prev=>prev.map(p=>{
-        //         if(p.id!==editingTextId) return p;
-
-        //         if(e.key==='Backspace'){
-        //             return {...p,text:p.text.slice(0,-1)};
-        //         }else if(e.key==='Enter'){
-        //             return {...p,text:p.text+"\n"};
-        //         }else if(e.key==='Escape'){
-        //             setEditingTextId(null);
-        //             setTool(TOOL_POINTER);
-                   
-        //             return p;
-        //         }else if(e.key.length===1){
-        //             return {...p,text:p.text+e.key};
-        //         }
-        //         return p;
-        //     }));
-        // };
-    // useEffect(()=>{
-    //     if(textareaRef.current) window.addEventListener('keydown',handleKeyDown);
-    //     return ()=>window.removeEventListener('keydown',handleKeyDown);
-    // },[editingTextId]);
-
-    
-    
-    
     useEffect(() => { 
         function sketchyRect(ctx,x,y,w,h,opts={}){
             const {strokes=4,jitter=3}=opts;
@@ -500,13 +434,13 @@ export function Canvas() {
             const {strokes=4,jitter=2}=opts;
             var rx=(endx-startx)/2;
             var ry=(endy-starty)/2;
+            ctx.globalAlpha=1;
             if(rx<0){
                 rx=rx*-1;
             }
             if(ry<0){
                 ry=ry*-1;
             }
-            //ctx.strokeRect(startx,starty,(endx-startx),(endy-starty));
              for(let i=0;i<strokes;i++){
                  ctx.beginPath();
                  ctx.ellipse(
@@ -527,10 +461,11 @@ export function Canvas() {
             const {strokes=4,jitter=2}=opts;
             ctx.globalAlpha=1;
             for(let i=0; i < strokes; i++){
-                ctx.beginPath();
+                ctx.beginPath();                
                 ctx.moveTo(x1+rand(jitter),y1+rand(jitter));
                 ctx.lineTo(x2+rand(jitter),y2+rand(jitter));
                 ctx.closePath();
+                ctx.fill("evenodd");
                 ctx.stroke();
                 ctx.fill();
             }
@@ -539,15 +474,12 @@ export function Canvas() {
         
         function sketchyArrow(ctx,x1,y1,x2,y2,opts={}){
             const {strokes=4,jitter=2}=opts;
-            const headlen=25;
-            const controlx=(x2-x1);
-            const controly=(y2-y1);
+            const headlen=25/1;
             const angle=Math.atan2(y2-y1,x2-x1);
             for(let i=0; i < strokes; i++){
                 ctx.beginPath();
                 ctx.moveTo(x1+rand(jitter),y1+rand(jitter));
                 ctx.lineTo(x2+rand(jitter),y2+rand(jitter));
-                //ctx.quadraticCurveTo(controlx,controly,x2,y2);
                 ctx.stroke();
                 ctx.closePath();
                                
@@ -568,25 +500,23 @@ export function Canvas() {
 
         function sketchyCurvedArrow(ctx,x1,y1,x2,y2,opts={}){
             const {strokes=4,jitter=2}=opts;
-            const headlen=25;
+            const headlen=25/1;
             const dx=x2-x1;
             const dy=y2-y1;
             const midx=(x1+x2)/2;
             const midy=(y1+y2)/2;
             const offset=60+rand(jitter);
-            const angle1=Math.atan2(y2-y1,x2-x1);
+            //const angle1=Math.atan2(y2-y1,x2-x1);
             const controlx=midx+(dx/2.5)/Math.sqrt((dx*dx)/2.3+(dy*dy)/2)*offset+rand(jitter);
             const controly=midy+(dx/2.5)/Math.sqrt((dx*dx)/2.4+(dy*dy)/2)*offset+rand(jitter);
             const angle=Math.atan2(y2-controly+rand(jitter),x2-controlx+rand(jitter));
 
             for(let i = 0; i < strokes; i++){
                 ctx.beginPath();
-                ctx.moveTo(x1+rand(jitter),y1+rand(jitter));
-                // ctx.lineTo(x2+rand(jitter),y2+rand(jitter));
+                ctx.moveTo(x1+rand(jitter),y1+rand(jitter));                
                 ctx.quadraticCurveTo(controlx,controly,x2,y2);
                 ctx.stroke();
                 ctx.closePath();
-                               
                 const hx=x2;
                 const hy=y2;
                 ctx.beginPath();
@@ -601,20 +531,24 @@ export function Canvas() {
             }
             return;
         }
-
-        function sketchyLink(link){
-            return;
-        }
+   
+        // const getTouchCenter = (t1, t2) => ({
+        //     x: (t1.clientX + t2.clientX) / 2,
+        //     y: (t1.clientY + t2.clientY) / 2
+        // });
         
-    
-	      const canvas = canvasRef.current;
-	      const ctx = canvas.getContext('2d');
-	      ctx.clearRect(0, 0, canvas.width, canvas.height);
+        //const distance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);                   
 
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+       
         ctx.save();
+        
         if(grid){
             const gridSize=30;
-            ctx.strokeStyle=darkMode?'#2224':'#ddd4';
+            ctx.strokeStyle=darkMode?'#2224':'#9994';
             ctx.lineWidth=1;
             for(let x=(offset.x%gridSize);x<=canvas.width;x+=gridSize){
                 ctx.beginPath();
@@ -630,90 +564,158 @@ export function Canvas() {
             }
         }
         ctx.translate(offset.x,offset.y);
-//        ctx.strokeStyle=color;
 
+        const fontSize=29/1;
         const drawPath = (path) => {
-	          if (!path) return;
-	          ctx.beginPath();
-            const { tool, points, start, end, text, link, color } = path;       
-	          switch (tool) {
-	          case TOOL_PEN:
+            if (!path) return;
+            ctx.beginPath();
+            const { tool, points, start, end, text, color } = path;
+            switch (tool) {
+            case TOOL_PEN:
                 ctx.strokeStyle=color;
-	              ctx.lineWidth=4;
+                ctx.lineWidth=3/1;
+                ctx.fillStyle=color+"05";
                 ctx.lineJoin="round";
                 ctx.lineCap="round";
-                
-		            ctx.moveTo(points[0].x, points[0].y);
-		            points.forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.moveTo(points[0].x, points[0].y);
+                points.forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.fill("evenodd");
                 ctx.stroke();
                 break;
-	          case TOOL_LINE:
+            case TOOL_LINE:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=2;
-                ctx.fillStyle=color+"05";
+                ctx.fillStyle=color+"09";
+                ctx.lineWidth=2.3/1;
                 sketchyLine(ctx,start.x,start.y,end.x,end.y);
-                //ctx.moveTo(start.x, start.y);
-                //ctx.lineTo(end.x, end.y);
-                //ctx.stroke();
+                ctx.stroke();
                 break;
-	          case TOOL_RECT:
+            case TOOL_RECT:
                 ctx.strokeStyle=color;
                 ctx.fillStyle=color+"02";
-                ctx.lineWidth=2;
+                ctx.lineWidth=2.3/1;
                 sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y);
-                //ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
                 break;
-	          case TOOL_CIRCLE:
+            case TOOL_CIRCLE:
                 ctx.strokeStyle=color;
                 ctx.fillStyle=color+"03";
-                ctx.lineWidth=2;
-		            //const radius = Math.hypot(end.x - start.x, end.y - start.y);
+                ctx.lineWidth=2.3/1;
                 sketchyCircle(ctx,start.x,start.y,end.x,end.y);
-		            //ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
-		            //ctx.stroke();
-		            break;
-	          case TOOL_ARROW:
+                break;
+            case TOOL_ARROW:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=2;
+                ctx.lineWidth=2/1;
                 sketchyArrow(ctx,start.x,start.y,end.x,end.y);
-		            //drawArrow(ctx, start, end);
-		            break;
-	          case TOOL_TEXT:
-		            if (text) {
+                break;
+            case TOOL_TEXT:
+                if (text) {
                     ctx.strokeStyle=color;
                     ctx.fillStyle=color;
-                    ctx.font = "28px Schoolbell,Single Day, Monospace,cursive";
+                    ctx.font = fontSize+"px Schoolbell,Single Day, Monospace,cursive";
                     ctx.textAlign="left";
-                    ctx.textBaseLine="bottom";
-                   
+                    ctx.textBaseLine="bottom";                   
                     const lines=text.split('\n');
                     lines.forEach((line,i)=>ctx.fillText(line,start.x*1,start.y+28*(i)+28));                    
-		            }
-		            break;
+                }
+                break;
             case TOOL_SPLINEARROW:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=2;
+                ctx.lineWidth=2.4/1;
                 sketchyCurvedArrow(ctx,start.x,start.y,end.x,end.y);
                 break;
-            case TOOL_LINK:
-                sketchyLink(links);
             default:
                 break;
-	          }
-	      };
+            }
+        };
         if(receivedPaths[0]) receivedPaths[0].forEach(drawPath);
-	      paths.forEach(drawPath);
-        ctx.restore();
-    }, [paths,receivedPaths,offset,scale,darkMode,grid]);
 
+        paths.forEach(drawPath);
+        
+        const getBorderPoint=(path,angle)=>{
+            const sin=Math.sin(angle);
+            const cos=Math.cos(angle);
+            
+            const w=(path.end.x-path.start.x)/2;
+            const h=(path.end.y-path.start.y)/2;
+            switch (path.tool){
+            case "circle":
+            case "ellipse":
+                const r=Math.max(w,h)/0.8;
+                const cx=(path.end.x+path.start.x)/2;
+                const cy=(path.end.y+path.start.y)/2;
+                return {
+                    x:cx+cos*r,
+                    y:cy+sin*r,
+                };
+            case "rect":
+                const rcx=(path.end.x+path.start.x)/2;
+                const rcy=(path.end.y+path.start.y)/2;
+                const dx=Math.abs(w/cos);
+                const dy=Math.abs(h/sin);
+                const min=Math.min(dx,dy)/0.8;
+                return {
+                    x:rcx+cos*min,
+                    y:rcy+sin*min,
+                };
+            default:
+                const dcx=(path.end.x+path.start.x)/2;
+                const dcy=(path.end.y+path.start.y)/2;
+                return {
+                    x:dcx,
+                    y:dcy,
+                }
+            }
+        }
+
+        const drawLink = (from,to) => {
+            const dx=to.end.x-from.end.x;
+            const dy=to.end.y-from.end.y;
+            const angle=Math.atan2(dy,dx);
+            const strokes=3;
+            const jitter=2;
+            const headlen=25/1;
+            const start=getBorderPoint(from,angle);
+            const end=getBorderPoint(to,angle+Math.PI);
+            for(let i=0;i<strokes;i++){
+                ctx.beginPath();
+                ctx.moveTo(start.x+rand(jitter), start.y+rand(jitter));
+                ctx.lineTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2/1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.strokeStyle=color;
+                ctx.moveTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.lineTo(
+                    end.x - headlen * Math.cos(angle - Math.PI/5)+rand(jitter),
+                    end.y - headlen * Math.sin(angle - Math.PI/5)+rand(jitter)
+                );
+                ctx.moveTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.lineTo(
+                    end.x - headlen * Math.cos(angle + Math.PI/5)+rand(jitter),
+                    end.y - headlen * Math.sin(angle + Math.PI/5)+rand(jitter)
+                );
+                ctx.stroke();
+                ctx.closePath();
+            }
+        };
+
+        links.forEach((link) => {
+            const a = paths.find((n) => (n.id === link.from && n.tool!==TOOL_POINTER));
+            const b = paths.find((n) => (n.id === link.to && n.tool!==TOOL_POINTER));
+            if (a && b) drawLink(a,b);
+            });
+        ctx.restore();
+    }, [paths,color,receivedPaths,links,selectedNode,offset,darkMode,grid]);
+        
+    
     useEffect(()=>{
         if(editingTextId){
             setLongestWordSize(editingTextValue.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length);
-            setPaths(prev => prev.map(p => p.id === editingTextId ? { ...p, text: editingTextValue } : p) ); 
+            setPaths(prev => prev.map(p => p.id === editingTextId ? { ...p, text: editingTextValue } : p) );           
         }
-        else return;
-        
-    },[editingTextId,editingTextValue,longestWordSize])
+        else return;        
+    },[editingTextId, editingTextValue, longestWordSize]);
 
     const  applyTextEdit = () => {
         if (!editingTextId) return ;
@@ -722,46 +724,28 @@ export function Canvas() {
         setEditingTextId(null);
         setEditingTextValue('');
     }
-    const backendAPI='https://note-down-backend.onrender.com';
-    //const backendAPI='http://localhost:5000';
+    
+    const backendAPI=process.env.SOCKET_API;
     useEffect(()=>{
-        //ws.current=new WebSocket('https://note-down-backend.onrender.com');
         const newSocket=io(backendAPI,{transport:["websocket"],secure:true});
         setSocket(newSocket);
-        // ws.current.onopen=()=> console.log('Connected to Socket server');
-
-        // ws.current.onmessage=(msg)=>{
-        //     const data=JSON.parse(msg.data);
-        //     if(data.payload) {setReceivedPaths(data.payload);setConnection(true);}
-        //     if(data.error) {alert(data.error);setConnection(false);}
-        // };
-        //console.log("Socket : ",newSocket);
         newSocket.on('collab',(msg)=>{
             const data=JSON.parse(msg);
-            //console.log('Message received');
             if(data.payload){setReceivedPaths(data.payload);setConnection(true);}
             if(data.error){alert(data.error);setConnection(false);}
         });
-        //return ()=> ws.current.close(); 
         return ()=>newSocket.disconnect();
-    },[]);
+    },[backendAPI]);
 
 
     const registerUser=()=>{
         if(userId===targetId) {alert("User ID & Target ID cannot be same.");return ;}
-        //ws.current.send(JSON.stringify({type:'register',userId}));
         socket.emit('register',JSON.stringify({type:'register',userId}));
         setConnection(true);
         setCollab(false);
     };
 
     const sendData=()=>{
-        // ws.current.send(JSON.stringify({
-        //     type:'send',
-        //     userId,
-        //     targetId,
-        //     payload:[paths]
-        // }));
         socket.emit('message',JSON.stringify({
             type:'send',
             userId,
@@ -783,7 +767,7 @@ export function Canvas() {
                 <button onClick={undo} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Undo2 size={18}></Undo2></button>
                 <button onClick={redo} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Redo2 size={18}></Redo2></button>
                 <button onClick={() => setPaths([])} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Delete size={18}></Delete></button>        
-            </div>
+        </div>
 
         <div className="theme-mode">
             {darkMode===true &&
@@ -812,17 +796,18 @@ export function Canvas() {
         
         <div className="toolbar">
             <input type="color" value={color} onChange={handleColorChange}/>
-            <button onClick={() => setTool(TOOL_POINTER)} style={{color:darkMode?'#fffffd':'black'}}><MousePointer2 size={18}></MousePointer2></button>
-            <button onClick={() => setTool(TOOL_ERASER)} style={{color:darkMode?'#fffffd':'black'}}><Eraser size={18}></Eraser></button>
-            <button onClick={() => setTool(TOOL_PEN)} style={{color:darkMode?'#fffffd':'black'}}><LineSquiggle size={18}></LineSquiggle></button>
-            <button onClick={() => setTool(TOOL_LINE)} style={{color:darkMode?'#fffffd':'black'}}><PencilLineIcon size={18}></PencilLineIcon></button>
-            <button onClick={() => setTool(TOOL_RECT)} style={{color:darkMode?'#fffffd':'black'}}><SquareIcon size={18}></SquareIcon></button>
-            <button onClick={() => setTool(TOOL_CIRCLE)} style={{color:darkMode?'#fffffd':'black'}}><Circle size={18}></Circle></button>
-            <button onClick={() => setTool(TOOL_ARROW)} style={{color:darkMode?'#fffffd':'black'}}><ArrowUpLeft size={18}></ArrowUpLeft></button>
-            <button onClick={() => setTool(TOOL_TEXT)} style={{color:darkMode?'#fffffd':'black'}}><Baseline size={18}></Baseline></button>
-            <button onClick={() => setTool(TOOL_SPLINEARROW)} style={{color:darkMode?'#fffffd':'black'}}><Undo size={18}/></button>               
-            <button onClick={() => setTool(TOOL_SELECT)} style={{color:darkMode?'#fffffd':'black'}}><LucideSquareDashedMousePointer size={18}></LucideSquareDashedMousePointer></button>
-            <button onClick={() => setTool(TOOL_PAN)} style={{color:darkMode?'#fffffd':'black'}}><Move size={18}></Move></button>
+            <button name={TOOL_POINTER} onClick={() => setTool(TOOL_POINTER)} style={{color:darkMode?'#fffffd':'black'}}><MousePointer2 size={18}></MousePointer2></button>
+            <button name={TOOL_ERASER} onClick={() => setTool(TOOL_ERASER)} style={{color:darkMode?'#fffffd':'black'}}><Eraser size={18}></Eraser></button>
+            <button name={TOOL_PEN} onClick={() => setTool(TOOL_PEN)} style={{color:darkMode?'#fffffd':'black'}}><LineSquiggle size={18}></LineSquiggle></button>
+            <button name={TOOL_LINE} onClick={() => setTool(TOOL_LINE)} style={{color:darkMode?'#fffffd':'black'}}><PencilLineIcon size={18}></PencilLineIcon></button>
+            <button name={TOOL_RECT} onClick={() => setTool(TOOL_RECT)} style={{color:darkMode?'#fffffd':'black'}}><SquareIcon size={18}></SquareIcon></button>
+            <button name={TOOL_CIRCLE} onClick={() => setTool(TOOL_CIRCLE)} style={{color:darkMode?'#fffffd':'black'}}><Circle size={18}></Circle></button>
+            <button name={TOOL_ARROW} onClick={() => setTool(TOOL_ARROW)} style={{color:darkMode?'#fffffd':'black'}}><ArrowUpLeft size={18}></ArrowUpLeft></button>
+            <button name={TOOL_TEXT} onClick={() => setTool(TOOL_TEXT)} style={{color:darkMode?'#fffffd':'black'}}><Baseline size={18}></Baseline></button>
+            <button name={TOOL_SPLINEARROW} onClick={() => setTool(TOOL_SPLINEARROW)} style={{color:darkMode?'#fffffd':'black'}}><Undo size={18}/></button>
+            <button name={TOOL_LINK} onClick={() => setTool(TOOL_LINK)} style={{color:darkMode?'#fffffd':'black'}}><GitCompareArrows size={18}/></button>
+            <button name={TOOL_SELECT} onClick={() => setTool(TOOL_SELECT)} style={{color:darkMode?'#fffffd':'black'}}><LucideSquareDashedMousePointer size={18}></LucideSquareDashedMousePointer></button>
+            <button name={TOOL_PAN} onClick={() => setTool(TOOL_PAN)} style={{color:darkMode?'#fffffd':'black'}}><Move size={18}></Move></button>
         </div>
 
         <div className="toolid" style={{background:"transparent",boxShadow:`0 0 4px ${color}`,color:color}}>
@@ -860,17 +845,17 @@ export function Canvas() {
                 rows={editingTextValue.split('\n').length}
                 cols={longestWordSize/2}
                 style={{
-                    opacity:'0.2',
+                    opacity:'0.5',
                     position:'absolute',
                     color:'white',
                     caretColor:'black',
                     left:textPosition.x+offset.x,
                     top:textPosition.y+offset.y,
                     resize:'none',
-                    overflow:'hidden',
-                    //height:`${editingTextValue.split('\n').length}ch`,
+                    overflow:'hidden',                    
                     width:`${longestWordSize}ch`,
-                    fontSize:'27.8px',
+                    fontSize:'27.5px',
+                    padding:'4px',
                     lineHeight:'1.1',
                     border:'solid 1px grey'
                 }}
@@ -885,16 +870,16 @@ export function Canvas() {
         
         <canvas
             ref={canvasRef}
-            width={window.innerWidth*2.3}
-            height={window.innerHeight*2.3}
+            width={window.innerWidth*2}
+            height={window.innerHeight*2}
             style={{background:darkMode?'#030303':'#fffffd', touchAction: "none",cursor:tool==="select" || tool==="pan"?"grab":tool==="pointer" ? "default":"crosshair",display:"block" }}
-            onMouseDown={handlePointerDown}
-            onMouseMove={handlePointerMove}
-            onMouseUp={handlePointerUp}
-            onMouseLeave={handlePointerUp}
-            onTouchStart={handlePointerDown}
-            onTouchMove={handlePointerMove}
-            onTouchEnd={handlePointerUp}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            // onTouchStart={handlePointerDown}
+            // onTouchMove={handlePointerMove}
+            // onTouchEnd={handlePointerUp}
             onDoubleClick={handleDoubleClick}
         />
 

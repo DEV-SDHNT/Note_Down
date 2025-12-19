@@ -3,12 +3,10 @@ import { useState,useEffect } from 'react';
 import { Editor, } from './components/Editor';
 import { Canvas, } from './components/Canvas';
 import { Home } from './components/Home';
-//import { Graph } from './components/Graph';
-//import { Tester } from './components/Tester';
 import { HomeIcon , FileText, Brush} from 'lucide-react';
 
 const App=()=> {
-    const [page,setPage]=useState('Home');
+    const [page,setPage]=useState('Canvas');
     useEffect(()=>{
         const handleWheel=(e)=>{
             if(e.ctrlKey) e.preventDefault();
@@ -39,7 +37,7 @@ const App=()=> {
             <div className="app">
                 {page==='Home' && <Home></Home>}
                 {page==='Editor' && <Editor></Editor>}
-                {page==='Canvas' && <Canvas></Canvas>}
+                {page==='Canvas' && <Canvas></Canvas>}              
             </div>
         </div>
     );

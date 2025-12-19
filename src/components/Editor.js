@@ -28,6 +28,7 @@ export const loadMarkdown=async (name)=>{
     const index=db.transaction("files").store.index("name");
     return index.get(name);
 };
+
 export const getAllMarkdown=async ()=>{
     const db=await initDB();
     return db.getAll("files");
@@ -43,7 +44,8 @@ export function Editor() {
     const [filename,setFilename]=useState("untitled.md");
     const [fileList,setFileList]=useState([]);
     const [fullScreen,setFullScreen]=useState(false);
-    const [darkMode,setDarkMode]=useState(false);
+    const [darkMode,setDarkMode]=useState(true);
+    const [fontSize,setFontSize]=useState(50);
     const textareaRef=useRef(null);
     const dbRef=useRef(null);
     
@@ -73,11 +75,11 @@ export function Editor() {
             setMarkdown("");
             setFilename("untitled.md");
         }
+        
 //        const tx=dbRef.current.transaction(STORE_NAME,"readonly");
   //      const store =tx.objectStore(STORE_NAME);
     //    const file=await store.get(name);
-      //  console.log(file);
-        
+      //  console.log(file);   
     };
     
     async function openFile(name) {
@@ -101,7 +103,8 @@ export function Editor() {
         }
         const tx=dbRef.current.transaction(STORE_NAME,"readwrite");
         const store=tx.objectStore(STORE_NAME);
-        await store.put({filename:name,content});
+        const updatedAt=Date.now();
+        await store.put({filename:name,content,updatedAt:updatedAt});
         await tx.done;
         await loadFileList();
         alert(`File ${filename} Saved`);
@@ -150,7 +153,8 @@ export function Editor() {
                     onChange={(e)=>setMarkdown(e.target.value)}
                     style={{
                         background:darkMode?'#030303':'#fffffd',
-                        color:darkMode?'#fffffd':'#030303'
+                        color:darkMode?'#fffffd':'#030303',
+                        fontSize:`${fontSize}px`
                     }}
                 ></textarea>
 
@@ -167,7 +171,9 @@ export function Editor() {
                     dangerouslySetInnerHTML={{__html:preview}}>
                 </div>
             </div>
-                
+            <div className="fontsize">
+                <input type='range' min={20} max={60} step={1} value={fontSize} onChange={(e)=>setFontSize(e.target.value)}></input>
+            </div>
                 <div className="theme">
                     {darkMode===true &&
                      <button
