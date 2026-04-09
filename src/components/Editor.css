@@ -114,8 +114,8 @@ body{
     to{
         display: flex;
         color: #000;
-        background: #fff4;
-        box-shadow: #ccc 0 0 4px;
+        background: #7f04;
+        box-shadow: #7F04 0 0 4px;
         backdrop-filter:blur(3px);
     }
 }
@@ -140,7 +140,7 @@ body{
 
 .main .menu-bar .menu-buttons{
     background: #FFF4;
-    backdrop-filter:blur(4px);
+    backdrop-filter:blur(0px);
     width: fit-content;
     display: none;
     justify-content: center;
@@ -274,16 +274,17 @@ body{
     left: 50%;
     bottom: 10px;
     padding: 13px;
-    background: #8883;
+    background: transparent;
     backdrop-filter:blur(2px);
     padding-inline:10px ;
     box-shadow: #8883 0 0 4px;
     translate:-50%;
-    border-radius: 30px;
+    border-radius: 10px;
 }
+
 .main .fontsize input[type="range"]{
     -webkit-appearance:none;
-    height: 5px;
+    height: 4px;
     border-radius: 40px;
     background: linear-gradient(270deg, #3339,#4444);
     outline: none;
@@ -291,13 +292,14 @@ body{
     justify-content: center;
     align-items: center;
 }
+
 .main .fontsize input[type="range"]::-webkit-slider-thumb{
     -weblkit-appearance:none;
     appearance:none;
     background: linear-gradient(45deg,#3339,#3333);
     box-shadow: #3337 0 0 10px;
     width: 24px;
-    height: 24px;
+    height: 10px;
     border-radius:40px;
     color: transparent;
     border: none;
@@ -306,15 +308,16 @@ body{
 .main .fontsize input[type="range"]::-moz-range-thumb{
     -weblkit-appearance:none;
     appearance:none;
-    background: linear-gradient(45deg,#3339,#3333);
-    box-shadow: #3337 0 0 10px;
+    background: linear-gradient(45deg,#3339,#9997);
+    box-shadow: inset #fff7 0 0 10px;
     width: 24px;
-    height: 24px;
+    height: 13px;
     border-radius:40px;
     color: transparent;
     border: none;
     backdrop-filter:blur(13px);
 }
+
 .main .theme{
     position: fixed;
     bottom:10px;

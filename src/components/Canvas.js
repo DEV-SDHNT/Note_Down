@@ -1,3 +1,4 @@
+// Comments are under development, kindle ignore or develop yourself.
 import "./Canvas.css";
 import io from 'socket.io-client';
 import React, { useState, useRef, useEffect } from "react";
@@ -83,7 +84,7 @@ export function Canvas() {
     const [currentPath, setCurrentPath] = useState(null);
 
     const [links, setLinks]=useState([]);
-    const [selectedNode,setSelectedNode]=useState(null);
+    const [selectedNode, setSelectedNode]=useState(null);
     
     const [editingTextId, setEditingTextId] = useState(null);
     const [editingTextValue, setEditingTextValue] = useState([]);
@@ -100,11 +101,11 @@ export function Canvas() {
 
     const [offset, setOffset]=useState({x:0,y:0});
     
-    const [last, setLast]=useState({x:0,y:0});
+    const [last, setLast]=useState({x:0, y:0});
     const [panningEnabled, setPanningEnabled]=useState(false);
     
-    const [darkMode, setDarkMode]=useState(false);
-    const [color, setColor]=useState("#000000");
+    const [darkMode, setDarkMode]=useState(true);
+    const [color, setColor]=useState("#ffffff");
     
     const dbRef=useRef(null);
     const textareaRef=useRef(null);
@@ -115,12 +116,12 @@ export function Canvas() {
     const [userId, setUserId]=useState('');
     const [targetId, setTargetId]=useState('');
     const [receivedPaths, setReceivedPaths]=useState([]);
-
+    const [receivedLinks,setReceivedLinks]=useState([]);
     // For Zoom ::
     //const touchDist=useRef(0);
-    //const scale=useRef(1);
-    //const offsetX=useRef(0);
-    //const offsetY=useRef(0);
+    const scale=useRef(1);
+    const offsetX=useRef(0);
+    const offsetY=useRef(0);
 
     
     async function loadFileList() {
@@ -186,6 +187,7 @@ export function Canvas() {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
         if (e.touches && e.touches[0]) {
+            if( e.touches.length>1) return;
             return { 
                 x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top, isTouch: true, };
         }
@@ -197,32 +199,64 @@ export function Canvas() {
     };
 
     const toWorld=(e)=>{
-        const {x,y}=getEventCoords(e);
-        return { x:x-offset.x, y:y-offset.y };    
+        const { x, y } = getEventCoords(e);
+        return { x: x/scale.current-offsetX.current, y: y/scale.current-offsetY.current };    
     }
 
     const handleColorChange=(e)=>{
         setColor(e.target.value);
     }
 
+    const lastTap=useRef(0);
 
     const handlePointerDown = (e) => {
         const { x, y } = getEventCoords(e);
         const pos=toWorld(e);        
         e.preventDefault();
+        
+        const DTDelay=300;
+        const now=performance.now();
+        if(now-lastTap.current<DTDelay && tool===TOOL_POINTER){      
+            const hit=paths.find(p=>
+                p.tool!=="pointer" &&
+                    p.start && p.end &&
+                    pos.x >= Math.min(p.start.x, p.end.x) -10 &&
+                    pos.x <= Math.max(p.start.x, p.end.x) +((p.text.length>0)?(p.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10):10) &&
+                    pos.y >= Math.min(p.start.y, p.end.y) -10 &&
+                    pos.y <= Math.max(p.start.y, p.end.y) +((p.text.length>0)?(p.text.split('\n').length*30):10)
+            );
+            if(hit){
+                setColor(hit.color);
+                console.log("Tool: ",hit.tool,"Text: ",hit.text);
+                if(hit.tool===TOOL_RECT){
+                    setEditingTextId(hit.id);
+                    setEditingTextValue(hit.text);
+                    setTextPosition({x:hit.start.x+(hit.end.x-hit.start.x)/2,y:hit.start.y+(hit.end.y-hit.start.y)/3});//x+w/2,y+(h/3)
+                }
+                else{
+                    setEditingTextId(hit.id);
+                    setEditingTextValue(hit.text);
+                    setTextPosition({x:hit.start.x,y:hit.start.y});                    
+                }
+            }
+        }
+        else{
+            lastTap.current=now;
+        }
+
         if(tool===TOOL_LINK){
             const node = paths.find(p => p.tool!=="pointer" &&
                                     p.start && p.end &&
                                     pos.x >= Math.min(p.start.x, p.end.x) -10 &&
-                                    pos.x <= Math.max(p.start.x, p.end.x) +10 &&
+                                    pos.x <= Math.max(p.start.x, p.end.x) +((p.text.length>0)?(p.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10):10) &&
                                     pos.y >= Math.min(p.start.y, p.end.y) -10 &&
-                                    pos.y <= Math.max(p.start.y, p.end.y) +10
+                                    pos.y <= Math.max(p.start.y, p.end.y) +((p.text.length>0)?(p.text.split('\n').length*30):10)
                                    );
             if (node) {
                 if (!selectedNode) {
                     setSelectedNode(node.id);
                 } else if (selectedNode !== node.id) {
-                    setLinks((prev) => [...prev, { from: selectedNode, to: node.id }]);
+                    setLinks((prev) => [...prev, { from: selectedNode, to: node.id,color:color }]);
                     setSelectedNode(null);
                 }
             }
@@ -267,7 +301,6 @@ export function Canvas() {
             }
         }
 
-
         if(tool===TOOL_POINTER){
             const hitTxt=paths.find(p=>p.tool==="text" &&
                                     pos.x >= Math.min(p.start.x,p.end.x)-10 &&
@@ -292,13 +325,13 @@ export function Canvas() {
             points:[pos],
             start: pos,
             end: pos,
-            text: '',
+            text: tool,
             links:links,
             color: color,
         };
         if( tool===TOOL_TEXT ){
             setEditingTextId(id);
-            setEditingTextValue('Text');
+            setEditingTextValue('Text..');
             setTimeout(()=>{
                 textareaRef.current?.focus();
             },1000);
@@ -315,30 +348,29 @@ export function Canvas() {
         });
     };
     
-    const handleDoubleClick=(e)=>{
-            const ctx = canvasRef.current.getContext("2d");
-            const pos=toWorld(e);
-            e.preventDefault();
-            const hit=paths.find(p=>
-                p.tool==="text" &&
-                    pos.x >= Math.min(p.start.x,p.end.x)-20 &&
-                    pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
-                    pos.y >= Math.min(p.start.y,p.end.y)-10 &&
-                    pos.y <= Math.max(p.start.y,p.end.y)+30 
-            );
-            if(hit){
-                setEditingTextId(hit.id);
-                setEditingTextValue(hit.text);
-                setTextPosition({x:hit.start.x,y:hit.start.y});
-            }
-       
-    }
+    // const handleDoubleClick=(e)=>{
+    //         // const ctx = canvasRef.current.getContext("2d");
+    //         // const pos=toWorld(e);
+    //         // e.preventDefault();
+    //         // const hit=paths.find(p=>
+    //         //     p.tool==="text" &&
+    //         //         pos.x >= Math.min(p.start.x,p.end.x)-20 &&
+    //         //         pos.x <= Math.max(p.start.x,p.end.x)+ctx.measureText(p.text).width*2 &&
+    //         //         pos.y >= Math.min(p.start.y,p.end.y)-10 &&
+    //         //         pos.y <= Math.max(p.start.y,p.end.y)+30 
+    //         // );
+    //         // if(hit){
+    //         //     setEditingTextId(hit.id);
+    //         //     setEditingTextValue(hit.text);
+    //         //     setTextPosition({x:hit.start.x,y:hit.start.y});
+    //         // }       
+    // }
     
     const handlePointerMove = (e) => { 
         const { x, y } = getEventCoords(e);
         const pos=toWorld(e);
         e.preventDefault();
-        if(socket!=null) sendData(paths);
+        if(socket!=null) sendData();
         if(dragging && selectedIds.length>0){
             const dx=pos.x-dragging.x;
             const dy=pos.y-dragging.y;
@@ -359,13 +391,13 @@ export function Canvas() {
                 :p));
             setDragging({x:pos.x,y:pos.y});
         };
-
+        
         if(tool===TOOL_PAN && panningEnabled){
             const dx=x-last.x;
             const dy=y-last.y;
-            setOffset((prev)=>({x:prev.x+dx,y:prev.y+dy}));
-            //offsetX.current+=dx;
-            //offsetY.current+=dy;
+            setOffset((prev)=>({x:(prev.x+dx),y:(prev.y+dy)}));
+            offsetX.current+=dx;
+            offsetY.current+=dy;
             setLast({x,y});
             return;
         }
@@ -415,7 +447,7 @@ export function Canvas() {
     }   
 
     useEffect(() => { 
-        function sketchyRect(ctx,x,y,w,h,opts={}){
+        function sketchyRect(ctx,x,y,w,h,text,opts={}){
             const {strokes=4,jitter=3}=opts;
             ctx.globalAlpha=1;
             for(let i=0;i<strokes;i++){
@@ -428,9 +460,15 @@ export function Canvas() {
                 ctx.stroke();
                 ctx.fill();
             }
+            // ctx.fillStyle=color;
+            // ctx.font = fontSize+"px Schoolbell,Single Day, Monospace,cursive";
+            // ctx.textAlign="left";
+            // ctx.textBaseLine="bottom";
+            // const rectText=text.split('\n');
+            // rectText.forEach((line,i)=>ctx.fillText(line,x+(w/3),y+(h/3)+28*(i)+28));
         }
         
-        function sketchyCircle(ctx,startx,starty,endx,endy,opts={}){
+        function sketchyCircle(ctx,startx,starty,endx,endy,text,opts={}){
             const {strokes=4,jitter=2}=opts;
             var rx=(endx-startx)/2;
             var ry=(endy-starty)/2;
@@ -455,6 +493,12 @@ export function Canvas() {
                  ctx.stroke();
                  ctx.fill();
              }
+            // ctx.fillStyle=color;
+            // ctx.font = fontSize+"px Schoolbell,Single Day, Monospace,cursive";
+            // ctx.textAlign="center";
+            // ctx.textBaseLine="bottom";
+            // const rectText=text.split('\n');
+            // rectText.forEach((line,i)=>ctx.fillText(line,startx+(endx-startx)/2,starty+(endy-starty)/3+28*(i)+28));
         }
         
         function sketchyLine(ctx,x1,y1,x2,y2,opts={}){
@@ -470,8 +514,7 @@ export function Canvas() {
                 ctx.fill();
             }
         }
-    
-        
+
         function sketchyArrow(ctx,x1,y1,x2,y2,opts={}){
             const {strokes=4,jitter=2}=opts;
             const headlen=25/1;
@@ -535,10 +578,9 @@ export function Canvas() {
         // const getTouchCenter = (t1, t2) => ({
         //     x: (t1.clientX + t2.clientX) / 2,
         //     y: (t1.clientY + t2.clientY) / 2
-        // });
+        // });      
+        //const distance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
         
-        //const distance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);                   
-
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -548,24 +590,25 @@ export function Canvas() {
         
         if(grid){
             const gridSize=30;
-            ctx.strokeStyle=darkMode?'#2224':'#9994';
+            ctx.strokeStyle=darkMode?'#3334':'#8884';
             ctx.lineWidth=1;
-            for(let x=(offset.x%gridSize);x<=canvas.width;x+=gridSize){
+            for(let x=(offsetX.current%gridSize);x<=canvas.width;x+=gridSize){
                 ctx.beginPath();
                 ctx.moveTo(x,0);
                 ctx.lineTo(x,canvas.height);
                 ctx.stroke();
             }
-            for(let y=(offset.y%gridSize);y<=canvas.height;y+=gridSize){
+            for(let y=(offsetY.current%gridSize);y<=canvas.height;y+=gridSize){
                 ctx.beginPath();
                 ctx.moveTo(0,y);
                 ctx.lineTo(canvas.width,y);
                 ctx.stroke();
             }
         }
-        ctx.translate(offset.x,offset.y);
+        ctx.scale(scale.current,scale.current);
+        ctx.translate(offsetX.current,offsetY.current);
 
-        const fontSize=29/1;
+        const fontSize=29/scale.current;
         const drawPath = (path) => {
             if (!path) return;
             ctx.beginPath();
@@ -573,7 +616,7 @@ export function Canvas() {
             switch (tool) {
             case TOOL_PEN:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=3/1;
+                ctx.lineWidth=3/scale.current;
                 ctx.fillStyle=color+"05";
                 ctx.lineJoin="round";
                 ctx.lineCap="round";
@@ -585,25 +628,25 @@ export function Canvas() {
             case TOOL_LINE:
                 ctx.strokeStyle=color;
                 ctx.fillStyle=color+"09";
-                ctx.lineWidth=2.3/1;
+                ctx.lineWidth=2.3/scale.current;
                 sketchyLine(ctx,start.x,start.y,end.x,end.y);
                 ctx.stroke();
                 break;
             case TOOL_RECT:
                 ctx.strokeStyle=color;
-                ctx.fillStyle=color+"02";
-                ctx.lineWidth=2.3/1;
-                sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y);
+                ctx.fillStyle=color+"03";
+                ctx.lineWidth=2.3/scale.current;
+                sketchyRect(ctx,start.x, start.y, end.x - start.x, end.y - start.y,text);                
                 break;
             case TOOL_CIRCLE:
                 ctx.strokeStyle=color;
                 ctx.fillStyle=color+"03";
-                ctx.lineWidth=2.3/1;
-                sketchyCircle(ctx,start.x,start.y,end.x,end.y);
+                ctx.lineWidth=2.3/scale.current;
+                sketchyCircle(ctx,start.x,start.y,end.x,end.y,text);
                 break;
             case TOOL_ARROW:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=2/1;
+                ctx.lineWidth=2/scale.current;
                 sketchyArrow(ctx,start.x,start.y,end.x,end.y);
                 break;
             case TOOL_TEXT:
@@ -619,33 +662,47 @@ export function Canvas() {
                 break;
             case TOOL_SPLINEARROW:
                 ctx.strokeStyle=color;
-                ctx.lineWidth=2.4/1;
+                ctx.lineWidth=2.4/scale.current;
                 sketchyCurvedArrow(ctx,start.x,start.y,end.x,end.y);
                 break;
             default:
                 break;
             }
         };
-        if(receivedPaths[0]) receivedPaths[0].forEach(drawPath);
+//        console.log("Receivedpaths: ",receivedPaths);
+        if(receivedPaths[0]) receivedPaths[0][0].forEach(drawPath);
 
         paths.forEach(drawPath);
         
         const getBorderPoint=(path,angle)=>{
-            const sin=Math.sin(angle);
-            const cos=Math.cos(angle);
-            
-            const w=(path.end.x-path.start.x)/2;
-            const h=(path.end.y-path.start.y)/2;
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+            const w = (path.end.x-path.start.x)/2;
+            const h = (path.end.y-path.start.y)/2;
             switch (path.tool){
             case "circle":
             case "ellipse":
-                const r=Math.max(w,h)/0.8;
-                const cx=(path.end.x+path.start.x)/2;
-                const cy=(path.end.y+path.start.y)/2;
+                const r = Math.max(w,h)/0.9;
+                const cx = (path.end.x+path.start.x)/2;
+                const cy = (path.end.y+path.start.y)/2;
                 return {
                     x:cx+cos*r,
                     y:cy+sin*r,
                 };
+            case "text":
+                const tendx=Math.max(path.start.x,path.end.x)+path.text.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length*10;
+                const tendy=Math.max(path.start.y,path.end.y)+path.text.split('\n').length*30;
+                const tw=(tendx-path.start.x)/2;
+                const th=(tendy-path.start.y)/2;
+                const tdx=Math.abs(tw/cos);
+                const tdy=Math.abs(th/sin);
+                const tcx=(tendx+path.start.x)/2;
+                const tcy=(tendy+path.start.y)/2;
+                const tmin=Math.min(tdx,tdy)/0.4;
+                return {
+                    x:tcx+cos*tmin,
+                    y:tcy+sin*tmin
+                }
             case "rect":
                 const rcx=(path.end.x+path.start.x)/2;
                 const rcy=(path.end.y+path.start.y)/2;
@@ -659,56 +716,110 @@ export function Canvas() {
             default:
                 const dcx=(path.end.x+path.start.x)/2;
                 const dcy=(path.end.y+path.start.y)/2;
+                const defaultx=Math.abs(w/cos);
+                const defaulty=Math.abs(h/sin);
+                const defaultmin=Math.min(defaultx,defaulty)/2.2;
                 return {
-                    x:dcx,
-                    y:dcy,
+                    x:dcx+cos*defaultmin,
+                    y:dcy+sin*defaultmin,
                 }
             }
         }
 
-        const drawLink = (from,to) => {
-            const dx=to.end.x-from.end.x;
-            const dy=to.end.y-from.end.y;
+        const drawLink = (from,to,color) => {
+            const dx=(to.end.x-from.end.x);
+            const dy=(to.end.y-from.end.y);
             const angle=Math.atan2(dy,dx);
+
             const strokes=3;
             const jitter=2;
-            const headlen=25/1;
+            const headlen=20/scale.current;
+
             const start=getBorderPoint(from,angle);
             const end=getBorderPoint(to,angle+Math.PI);
+
+
+            const linkangle=Math.atan2((end.y-start.y),(end.x-start.x));
+            
             for(let i=0;i<strokes;i++){
                 ctx.beginPath();
-                ctx.moveTo(start.x+rand(jitter), start.y+rand(jitter));
-                ctx.lineTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 2/1;
+                ctx.lineWidth = 3/scale.current;
                 ctx.stroke();
-
                 ctx.beginPath();
                 ctx.strokeStyle=color;
-                ctx.moveTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.moveTo(end.x, end.y);
                 ctx.lineTo(
-                    end.x - headlen * Math.cos(angle - Math.PI/5)+rand(jitter),
-                    end.y - headlen * Math.sin(angle - Math.PI/5)+rand(jitter)
+                    end.x - headlen * Math.cos(linkangle - Math.PI/4),
+                    end.y - headlen * Math.sin(linkangle - Math.PI/4)
                 );
-                ctx.moveTo(end.x+rand(jitter), end.y+rand(jitter));
+                ctx.moveTo(end.x, end.y);
                 ctx.lineTo(
-                    end.x - headlen * Math.cos(angle + Math.PI/5)+rand(jitter),
-                    end.y - headlen * Math.sin(angle + Math.PI/5)+rand(jitter)
+                    end.x - headlen * Math.cos(linkangle + Math.PI/4),
+                    end.y - headlen * Math.sin(linkangle + Math.PI/4)
                 );
                 ctx.stroke();
                 ctx.closePath();
             }
         };
-
+        if(receivedLinks[1]){
+//            console.log("Receivedlinks: ",receivedLinks[1]);
+            receivedLinks[1][0].forEach((link) => {
+                const a = receivedPaths[0][0].find((n) => (n.id === link.from && n.tool!==TOOL_POINTER));
+                const b = receivedPaths[0][0].find((n) => (n.id === link.to && n.tool!==TOOL_POINTER));
+                const linkcolor=link.color;
+                if (a && b) drawLink(a,b,linkcolor);
+            });            
+        }
         links.forEach((link) => {
             const a = paths.find((n) => (n.id === link.from && n.tool!==TOOL_POINTER));
             const b = paths.find((n) => (n.id === link.to && n.tool!==TOOL_POINTER));
-            if (a && b) drawLink(a,b);
-            });
+            const linkcolor=link.color;
+            if (a && b) drawLink(a,b,linkcolor);
+        });
+
+        // const onTouchStart=(e)=>{
+        //     if(tool===TOOL_PAN) return;
+        //     if(e.touches.length===2){
+        //         touchDist.current=distance(e.touches[0],e.touches[1]);
+        //     }
+        // };
+        // const onTouchMove=(e)=>{
+        //     if(tool===TOOL_PAN) return;
+        //     if(e.touches.length===2 && tool===TOOL_PAN) {                 
+        //         e.preventDefault();
+        //         const newDist=distance(e.touches[0],e.touches[1]);
+        //         const zoom=newDist/touchDist.current;
+        //         touchDist.current=newDist;
+
+        //         const rect=canvas.getBoundingClientRect();
+        //         const cx=((e.touches[0].clientX+e.touches[1].clientX)/2-rect.left)/scale.current-offsetX.current;
+        //         const cy=((e.touches[0].clientY+e.touches[1].clientY)/2-rect.top)/scale.current-offsetY.current;
+
+        //         scale.current*=zoom;
+        //         offsetX.current-=cx*(zoom-1);
+        //         offsetY.current-=cy*(zoom-1);
+                
+        //         ctx.clearRect(0,0,canvas.width,canvas.height);
+        //         ctx.save();
+        //         ctx.scale(scale.current,scale.current);
+        //         ctx.translate(offsetX.current,offsetY.current);
+        //         paths.forEach(drawPath);
+        //         ctx.restore();
+        //     }
+        // }
         ctx.restore();
-    }, [paths,color,receivedPaths,links,selectedNode,offset,darkMode,grid]);
+        // canvas.addEventListener("touchstart",onTouchStart);
+        // canvas.addEventListener("touchmove",onTouchMove);
+        // return ()=>{
+        //     canvas.removeEventListener("touchstart",onTouchStart);
+        //     canvas.removeEventListener("touchmove",onTouchMove);
+        // };
         
-    
+    }, [paths,color,receivedPaths,links,receivedLinks,selectedNode,darkMode,grid,scale,offsetX,offsetY,offset,tool]);
+        
     useEffect(()=>{
         if(editingTextId){
             setLongestWordSize(editingTextValue.split('\n').reduce((a,b)=>a.length>=b.length?a:b).length);
@@ -725,18 +836,23 @@ export function Canvas() {
         setEditingTextValue('');
     }
     
-    const backendAPI=process.env.SOCKET_API;
+    // For Hacking Purpose Only: (~_~)!
+    const backendAPI="https://note-down-backend.onrender.com";
+    //const backendAPI="http://localhost:5000";
     useEffect(()=>{
         const newSocket=io(backendAPI,{transport:["websocket"],secure:true});
         setSocket(newSocket);
         newSocket.on('collab',(msg)=>{
             const data=JSON.parse(msg);
-            if(data.payload){setReceivedPaths(data.payload);setConnection(true);}
+            if(data.payload){
+                setReceivedPaths(data.payload);
+                setReceivedLinks(data.payload);
+                setConnection(true);
+            }
             if(data.error){alert(data.error);setConnection(false);}
         });
         return ()=>newSocket.disconnect();
     },[backendAPI]);
-
 
     const registerUser=()=>{
         if(userId===targetId) {alert("User ID & Target ID cannot be same.");return ;}
@@ -750,7 +866,7 @@ export function Canvas() {
             type:'send',
             userId,
             targetId,
-            payload:[paths]
+            payload:[[paths],[links]]
         }));
     };
     
@@ -774,7 +890,7 @@ export function Canvas() {
              <button
                  name="Darkmode"
                  style={{background:'transparent',color:'#fffffd'}}
-                 onClick={()=>{setDarkMode(false)}}
+                 onClick={()=>{setDarkMode(false);setColor("#333333");}}
              >
                  <Moon size={18}/>
              </button>}
@@ -782,7 +898,7 @@ export function Canvas() {
              <button
                  name='Lightmode'
                  style={{background:'transparent',color:'black'}}
-                 onClick={()=>setDarkMode(true)}
+                 onClick={()=>{setDarkMode(true);setColor("#aaaaaa");}}
              >
                  <Sun size={18}/>
              </button>}
@@ -810,7 +926,7 @@ export function Canvas() {
             <button name={TOOL_PAN} onClick={() => setTool(TOOL_PAN)} style={{color:darkMode?'#fffffd':'black'}}><Move size={18}></Move></button>
         </div>
 
-        <div className="toolid" style={{background:"transparent",boxShadow:`0 0 4px ${color}`,color:color}}>
+        <div className="toolid" style={{background:`${color}33`,boxShadow:`0 0 4px ${color}77`,color:color}}>
             {tool} <br/> 
         </div>
 
@@ -845,19 +961,20 @@ export function Canvas() {
                 rows={editingTextValue.split('\n').length}
                 cols={longestWordSize/2}
                 style={{
-                    opacity:'0.5',
+                    opacity:'1.0',
                     position:'absolute',
-                    color:'white',
-                    caretColor:'black',
-                    left:textPosition.x+offset.x,
-                    top:textPosition.y+offset.y,
+                    color:color,
+                    caretColor:color,
+                    left:(textPosition.x+offsetX.current),
+                    top:(textPosition.y+offsetY.current),
                     resize:'none',
                     overflow:'hidden',                    
                     width:`${longestWordSize}ch`,
-                    fontSize:'27.5px',
-                    padding:'4px',
-                    lineHeight:'1.1',
-                    border:'solid 1px grey'
+                    fontSize:`29px`,
+                    padding:'-1px',
+                    lineHeight:'1',
+                    border:'3px solid'+darkMode ?"#030303":'#fffffd' ,
+                    background:darkMode?"#030303":'#fffffd'
                 }}
                 value={editingTextValue}
                 onChange={(e)=>setEditingTextValue(e.target.value)}
@@ -869,26 +986,22 @@ export function Canvas() {
         )}
         
         <canvas
-            ref={canvasRef}
-            width={window.innerWidth*2}
-            height={window.innerHeight*2}
-            style={{background:darkMode?'#030303':'#fffffd', touchAction: "none",cursor:tool==="select" || tool==="pan"?"grab":tool==="pointer" ? "default":"crosshair",display:"block" }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            // onTouchStart={handlePointerDown}
-            // onTouchMove={handlePointerMove}
-            // onTouchEnd={handlePointerUp}
-            onDoubleClick={handleDoubleClick}
+            ref = {canvasRef}
+            width = {window.innerWidth*2}
+            height = {window.innerHeight*2}
+            style = {{background:darkMode?'#030303':'#fffffd', touchAction: "none",cursor:tool==="select" || tool==="pan"?"grab":tool==="pointer" ? "default":"crosshair",display:"block" }}
+            onPointerDown = {handlePointerDown}
+            onPointerMove = {handlePointerMove}
+            onPointerUp = {handlePointerUp}
+            onPointerLeave = {handlePointerUp}
         />
 
         { showModal && (
-            <div className="modal">
-                <div className="modal-container">
+            <div className = "modal">
+                <div className = "modal-container">
                     <h2>Select a File</h2>
                     <ul>
-                        {drawingList.map((name)=>(
+                        { drawingList.map((name) => (
                             <li key={name}>
                                 <span onClick={()=>openFile(name)} style={{cursor:'pointer',flexGrow:1}}>{name}</span>
                                 <button onClick={()=>{deleteFile(name)}} className="delete-button"><Trash2 size={14}></Trash2></button>
@@ -899,7 +1012,6 @@ export function Canvas() {
                 </div>
             </div>
         )}
-
         { showSaveModal && (
             <div className="modal">
                 <div className="modal-container">
@@ -912,6 +1024,6 @@ export function Canvas() {
                 </div>
             </div>
         )}
-	      </div>
+	</div>
     );
 }

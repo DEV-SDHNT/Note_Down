@@ -45,7 +45,7 @@ export function Editor() {
     const [fileList,setFileList]=useState([]);
     const [fullScreen,setFullScreen]=useState(false);
     const [darkMode,setDarkMode]=useState(true);
-    const [fontSize,setFontSize]=useState(50);
+    const [fontSize,setFontSize]=useState(23);
     const textareaRef=useRef(null);
     const dbRef=useRef(null);
     
@@ -128,13 +128,13 @@ export function Editor() {
             <div className="dynamicbar">
                 <div className="menu-bar">
                     <div className="file">
-                        <p className="file-name">{filename}</p>
+                        <p className="file-name" style={{color:darkMode?'#fffffd':'black'}}>{filename}</p>
                     </div>
                     <div className="menu-buttons">
-                        <button onClick={()=>handleNewFile(filename)}><Plus size={18}/></button>
-                        <button onClick={()=>setShowModal(true)}><FolderOpen size={18}/></button>
-                        <button onClick={()=>setSaveModal(true)}><Save size={18}/></button>
-                        <button onClick={()=>{setShowModal(true)}}><Trash2 size={18}/></button>
+                        <button onClick={()=>handleNewFile(filename)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Plus size={18}/></button>
+                        <button onClick={()=>setShowModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><FolderOpen size={18}/></button>
+                        <button onClick={()=>setSaveModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Save size={18}/></button>
+                        <button onClick={()=>setShowModal(true)} style={{color:darkMode?'#fffffd':'black',background:darkMode?'#00000031':'#ffffff31'}}><Trash2 size={18}/></button>
                     </div>
                 </div>
             </div>

@@ -10,7 +10,7 @@
 
 # android wrap
 /android
-
+capacitor.config.ts
 # production
 /build
 
@@ -21,11 +21,12 @@
 .env.test.local
 .env.production.local
 .env
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 /src-tauri
-capacitor.config.ts
+
 /assets
 /icons

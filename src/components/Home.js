@@ -20,11 +20,11 @@ export function Home(){
                     <div>
                         Ideas strike when you least expect them — and now you’ve got the perfect place to keep them! <br></br>
                         Whether it’s quick thoughts, to-dos, class notes, or your next big plan, NoteDown is here to help you stay on top of it all.<br></br>
-                        ✨ Why You’ll Love It:<br></br>
-                        📝 Super simple note-taking.<br></br>
-                        🧠 Smart organization with IndexedDB(Inside your browser).<br></br>
+                        - Why You’ll Love It:<br></br>
+                        - Super simple note-taking.<br></br>
+                        - Smart organization with IndexedDB.<br></br>
                     </div>
-                    👉 Try it now!
+                    ~ Try it now!
                 </div>
             </div>
         </div>

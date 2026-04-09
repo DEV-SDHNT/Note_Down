@@ -8,7 +8,7 @@ html{
     font-family: "Schoolbell",cursive;
 }
 canvas{
-    touch-action: none;
+    touch-action: manipulation;
     background-color: #FFf;
     border: none;
     overflow: hidden;
@@ -19,8 +19,10 @@ textarea{
     white-space: nowrap;
     overflow-anchor:none;
     scrollbar-width:none;
-    border: solid 1px grey;
-    border-radius: 10px;
+    background: transparent;
+}
+textarea:focus {
+    outline: none;
 }
 .collab{
     position: fixed;
@@ -85,6 +87,7 @@ textarea{
 .ids button:hover{
     background: #AF44;
     color:#360;
+    filter: invert(-1);
     animation: colorChange 5s infinite alternate ease;
 }
 .ids button:focus{
@@ -99,12 +102,13 @@ textarea{
     position: fixed;
     left:50%;
     top:0.8vh;
-    min-width: 9vw;
+    /* min-width: 7vw; */
     text-align: center;
     padding-block: 0.4vh;
     padding-inline:1vw;
     border-radius: 30px;
     translate:-50%;
+    background:#0f03;
     backdrop-filter:blur(4px);
 }
 .toolbar input{
@@ -147,17 +151,17 @@ textarea{
 }
 
 .toolbar{
-    box-shadow: 0 0 5px #8885;
-    width: fit-10px;
-    border-radius:30px;
-    backdrop-filter:blur(3px);
+    width: fit-content;
+    border: none;
+    border-radius: 30px;
+    backdrop-filter: blur(4px);
     position: fixed;
-    bottom:1vh;
-    left:50%;
+    bottom: 1vh;
+    left: 50%;
     z-index: 3;
-    translate:-50%;
+    translate: -50%;
     display: flex;
-    padding:5px;
+    padding: 5px;
     justify-content: space-around;
     align-items: center;
 }
@@ -166,8 +170,6 @@ textarea{
     border: none;
     border-radius: 30px;
     background:transparent;
-    backdrop-filter:blur(3px);
-    color:black;
     height: 35px;
     width: 35px;
     display: flex;
@@ -177,19 +179,17 @@ textarea{
     margin:0 0 0 0;
 }
 .toolbar button:hover{
-    background: #AF44;
-    color:#360;
-    animation: colorChange 5s infinite alternate ease;
+    z-index: 10;
+    animation: focused 0.1s forwards ease-in;
 }
 .toolbar button:focus{
-    background: #AF44;
-    color:#360;
-    animation: colorChange 5s infinite alternate ease;
+    z-index: 10;
+    transform: scale(1.3) translate(0,-4px);
 }
-
-@keyframes colorChange{
-    from{filter:hue-rotate(0deg);}
-    to{filter:hue-rotate(360deg);}
+@keyframes focused{
+    to{
+        transform: scale(1.3) translate(0,-5px);
+    }
 }
 
 .hist-tools{
